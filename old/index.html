@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>伴学鸭聊天界面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        
+        body {
+            background-color: #F3F3F3;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAMqADAAQAAAABAAAAMgAAAAB1y6+rAAABG0lEQVRoBe1XWwrDMAzLUXbLHb+LS1McNwR9GOQODUbjRtiSHw1pR2uftvnZfv9/q+M2Elp7i4htkiViUWNKUihBu/jUuKnOssmh/iRCM5F7PtmQlT/srO0Xhb9fnfsI6A1ib1WrhYl8g4htMSRiUVpKUihBu/jUuKnOssmh/iRCM5H7adfJHjuKPWORz2SzyVn8iVAwIH4QqDsujStNDk2eRIT+NZOSFErQbLESUaWdrj7Wnd0XhN2enstjzSZn8R+k3AuIHwTqTkvjSpNDkycRrnfHkpIUSlC0TVCcRIweck9WUnRnd0U4l6xKjLiRz2QPkD2njWCUxpUm1xMJ8YNAqDMWTiLC3JhJSQolaLZYiajSTlcf/8Wd/Qe3wZ32yy34pgAAAABJRU5ErkJggg==');
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: linear-gradient(to bottom right, #CCFF88, #F1FFD7);
+        }
+        
+        .chat-container {
+            width: 375px;
+            height: 812px;
+            background: linear-gradient(to bottom right, #CCFF88, #F1FFD7);
+            border-radius: 33px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .chat-header {
+            height: 60px;
+            background-color: #51AE67;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 500;
+            border-radius: 33px 33px 0 0;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .chat-messages {
+            height: calc(100% - 120px);
+            overflow-y: auto;
+            padding: 15px;
+            padding-top: 80px; /* 为顶部固定思考框留出空间 */
+        }
+        
+        .chat-input {
+            height: 60px;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 0 0 33px 33px;
+        }
+        
+        .input-field {
+            flex: 1;
+            height: 47px;
+            border-radius: 23px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background-color: white;
+            padding: 0 15px;
+            font-size: 16px;
+            color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .message {
+            max-width: 80%;
+            margin-bottom: 20px;
+            clear: both;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        
+        .message-content {
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        
+        .user-message {
+            float: right;
+            margin-left: 20%;
+        }
+        
+        .user-message .message-content {
+            background-color: #51AE67;
+            color: white;
+            border-radius: 18px 0 18px 18px;
+        }
+        
+        .ai-message {
+            float: left;
+            margin-right: 20%;
+        }
+        
+        .ai-message .message-content {
+            background-color: white;
+            color: #585858;
+            border-radius: 0 18px 18px 18px;
+        }
+        
+        /* 思考容器 - 灵动岛样式 */
+        .thinking-container {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            z-index: 5;
+            overflow: hidden;
+            padding: 0 15px;
+            transition: all 0.5s ease-in-out;
+        }
+        
+        /* 完全展开状态 */
+        .thinking-container.expanded {
+            height: auto;
+            max-height: 200px; /* 调整为更大的高度以显示所有内容 */
+        }
+        
+        /* 灵动岛状态 */
+        .thinking-container.collapsed {
+            height: 40px;
+            width: 100px; /* 灵动岛宽度 */
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 20px;
+        }
+        
+        .thinking {
+            background-color: rgba(1, 1, 1, 0.8);
+            color: #94FAA1;
+            padding: 15px;
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        .thinking-header {
+            display: flex;
+            align-items: center;
+            height: 20px;
+            position: relative;
+        }
+        
+        .thinking-text {
+            font-size: 16px;
+            margin-right: 5px;
+            white-space: nowrap;
+        }
+        
+        .thinking-time {
+            font-size: 16px;
+            margin-right: 5px;
+        }
+        
+        .thinking-content {
+            font-size: 14px;
+            opacity: 0.5;
+            line-height: 1.6;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 150px; /* 内容区域最大高度，允许滚动 */
+        }
+        
+        /* 灵动岛状态下隐藏内容和常规标题 */
+        .thinking-container.collapsed .thinking-content,
+        .thinking-container.collapsed .thinking-text,
+        .thinking-container.collapsed .thinking-time,
+        .thinking-container.collapsed .thinking-indicator {
+            display: none;
+        }
+        
+        /* 眼睛图标 - 只在收起状态显示 */
+        .eyes {
+            display: none;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .thinking-container.collapsed .eyes {
+            display: flex;
+        }
+        
+        .eye {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: #94FAA1;
+            margin: 0 5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pupil {
+            width: 6px;
+            height: 6px;
+            background-color: #000;
+            border-radius: 50%;
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            animation: lookAround 3s infinite alternate;
+        }
+        
+        @keyframes lookAround {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(2px, -1px); }
+            50% { transform: translate(-1px, 1px); }
+            75% { transform: translate(1px, 2px); }
+        }
+        
+        .thinking-indicator {
+            display: flex;
+            margin-left: 10px;
+        }
+        
+        .thinking-dot {
+            width: 4px;
+            height: 3px;
+            background-color: #94FAA1;
+            margin-right: 4px;
+            opacity: 0.8;
+            animation: blinkDot 1.5s infinite alternate;
+        }
+
+        .thinking-dot:nth-child(2) {
+            animation-delay: 0.5s;
+        }
+
+        .thinking-dot:nth-child(3) {
+            animation-delay: 1s;
+        }
+        
+        .plan-card {
+            clear: both;
+            background-color: rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            padding: 18px;
+            margin: 25px 0;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        
+        .plan-title {
+            font-size: 20px;
+            color: #469337;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .plan-date {
+            font-size: 14px;
+            color: #51AE67;
+            margin-bottom: 20px;
+        }
+        
+        .plan-item {
+            background-color: rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+        }
+        
+        .plan-icon {
+            width: 46px;
+            height: 46px;
+            background-color: white;
+            border-radius: 23px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 15px;
+        }
+        
+        .plan-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+        
+        .plan-details {
+            flex: 1;
+        }
+        
+        .plan-item-title {
+            font-size: 16px;
+            color: #585858;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .plan-item-subtitle {
+            font-size: 12px;
+            color: #868686;
+        }
+        
+        .add-plan-btn {
+            background-color: #51AE67;
+            color: white;
+            border-radius: 14px;
+            padding: 15px;
+            text-align: center;
+            font-size: 16px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .add-plan-btn:hover {
+            background-color: #469337;
+        }
+        
+        /* 选项卡样式 */
+        .options-card {
+            display: flex;
+            justify-content: space-between;
+            background-color: white;
+            border-radius: 12px;
+            padding: 5px;
+            margin: 10px 0;
+            width: 100%;
+        }
+        
+        .option {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #51AE67;
+            cursor: pointer;
+        }
+        
+        .option.selected {
+            background-color: #51AE67;
+            color: white;
+            font-weight: 500;
+        }
+        
+        /* 图片样式 */
+        .chart-img {
+            width: 100%;
+            border-radius: 12px;
+            margin: 10px 0;
+            max-width: 280px;
+        }
+        
+        /* 表单样式 */
+        .form-container {
+            background-color: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 10px 0;
+            width: 100%;
+        }
+        
+        .form-title {
+            font-size: 16px;
+            color: #51AE67;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            font-size: 14px;
+            color: #585858;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .radio-options {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+        }
+        
+        .radio-option input {
+            margin-right: 5px;
+        }
+        
+        .radio-option label {
+            font-size: 12px;
+            color: #585858;
+        }
+        
+        .submit-btn {
+            background-color: #51AE67;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes blinkDot {
+            from { opacity: 0.3; }
+            to { opacity: 0.8; }
+        }
+        
+        /* 自定义滚动条 */
+        .chat-messages::-webkit-scrollbar,
+        .thinking-content::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb,
+        .thinking-content::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-track,
+        .thinking-content::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+        
+        /* 消息间的间隔时间标记 */
+        .time-marker {
+            text-align: center;
+            margin: 20px 0;
+            color: #868686;
+            font-size: 12px;
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">伴学鸭</div>
+        <div class="thinking-container collapsed" id="thinkingContainer">
+            <div class="thinking">
+                <div class="thinking-header">
+                    <div class="thinking-text" id="thinkingType">思考中</div>
+                    <div class="thinking-time" id="thinkingTime">0：01</div>
+                    <div class="thinking-indicator">
+                        <div class="thinking-dot"></div>
+                        <div class="thinking-dot"></div>
+                        <div class="thinking-dot"></div>
+                    </div>
+                    <!-- 添加眼睛图标 -->
+                    <div class="eyes">
+                        <div class="eye"><div class="pupil"></div></div>
+                        <div class="eye"><div class="pupil"></div></div>
+                    </div>
+                </div>
+                <div class="thinking-content" id="thinkingContent"></div>
+            </div>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input">
+            <input type="text" class="input-field" placeholder="给伴学鸭发送消息～">
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const thinkingContainer = document.getElementById('thinkingContainer');
+        const thinkingContent = document.getElementById('thinkingContent');
+        const thinkingTime = document.getElementById('thinkingTime');
+        const thinkingType = document.getElementById('thinkingType');
+        
+        // 对话数据
+        const conversation = [
+            {
+                type: 'thinking',
+                content: '作为老师，我需要先快速定位学生的年级，才能匹配对应的备考策略。高三学生时间紧迫，需精准规划；高一高二则侧重基础巩固。学生回答前，我会预设他可能处于高三（因临近高考），但需确认。此外，用"鸭鸭"拉近距离，避免机械感，建立信任是后续辅导的基础。\n\n调取《各省高考时间表》确认当前备考阶段\n调取《学生年级-学习痛点对应表》预判需求'
+            },
+            {
+                type: 'ai',
+                content: '嗨同学！我是伴学鸭~你叫我鸭鸭就好！你现在上高几呀？',
+                hasOptions: true
+            },
+            {
+                type: 'user',
+                content: '高三'
+            },
+            {
+                type: 'thinking',
+                content: '此时学生刚告知是高三，但尚未透露省份。作为老师，我需要立刻锁定省份信息，因为不同省份的高考卷差异巨大（如新课标Ⅰ卷、Ⅱ卷、自主命题）。\n\n目标1：快速判断学生所在省的高考政策（如赋分制、选考要求）和试卷结构（题量、题型）。\n\n目标2：通过省份关联一本线、物理单科分数线等数据，为后续制定目标提供依据。\n\n策略：用"奋斗"一词传递共情，避免直接提问的压迫感。\n\n预加载《全国各省高考物理考纲对比库》\n准备调用《省份-物理一本线映射表》（待学生回答后触发）'
+            },
+            {
+                type: 'ai',
+                content: '高三党不容易呀，还有几十天就高考了呢，你在哪个省奋斗呢？'
+            },
+            {
+                type: 'user',
+                content: '湖北'
+            },
+            {
+                type: 'thinking',
+                content: '通过"小伙伴"暗示群体共鸣，让学生感到模考崩溃是普遍现象，减轻自我怀疑。学生提到物理50分，需判断是基础漏洞（如公式不熟）还是应试技巧问题（如时间分配）。\n\n同时快速关联一本线：湖北物理一本线约65-70分，80分可冲重点大学。\n\n调取《湖北高三模考难度系数对比库》\n调取《物理50-80分提分案例库》中的速效方案'
+            },
+            {
+                type: 'ai',
+                content: '哎呀，鸭鸭的湖北小伙伴们都说最近的模考难度爆表呢，你感觉咋样？'
+            },
+            {
+                type: 'user',
+                content: '模考已崩，物理才50，我想上一本，啊啊啊啊啊.....'
+            },
+            {
+                type: 'thinking',
+                content: '学生目标一本，需计算总分缺口。假设湖北理科一本线约520分，若其他科总分450+，物理需70分；若其他科较弱，物理需80+。\n\n同时，强调"简单题不错+中档题90%"的战术，符合湖北卷特点（中档题占比60%）。\n\n调取《湖北近3年一本线及科目贡献值表》\n调取《物理题型分值分布图》确认简单/中档题占比'
+            },
+            {
+                type: 'ai',
+                content: '不慌，容鸭鸭帮你分析下局势，你其他科都怎么样啊，考一本你物理需要提升到多少？'
+            },
+            {
+                type: 'user',
+                content: '其他科倒还好，物理怎么也得冲到80分，现在完全没有思路怎么学。'
+            },
+            {
+                type: 'thinking',
+                content: '学生缺乏方向，需用数据让他看到"可操作性"。湖北物理高频考点明确（如动量守恒、电磁场复合题），集中突破这些模块效率最高。\n\n同时，避免让学生陷入"从头学"的误区，强调"考什么练什么"。\n\n调取《湖北物理题型分布表》\n调取《湖北物理难度分布表》\n调取《湖北物理考频统计表（2021-2024）》\n调取《高频考点-基础题对应题库》'
+            },
+            {
+                type: 'ai',
+                content: '好，明白了，鸭鸭先带你分析湖北省近4年的考卷哈，看完你就大概知道自己需要做什么了。\n\n首先，近四年的题型和难度分布如下：',
+                hasChart: 'distribution'
+            },
+            {
+                type: 'ai',
+                content: '整体难度适中，以易错的中档题居多，你如果想拿80分的话，简单题不能错，中档题要答对90%，难题至少要拿10分。\n\n然后，我们看下不同模块的考频哈：',
+                hasChart: 'frequency'
+            },
+            {
+                type: 'ai',
+                content: '⼒学模块功和能、动量是最热门考点，考频⾼达⼗次和⼋次；电磁学模块电场、磁场、电磁感应均出现过⼀年两考，需要重点关注；\n\n原⼦物理、热学、光学等选修模块每年⼀题，考查内容基本固定；万有引⼒、直线运动等⼒学基础知识模块内轮换考查，需要落实巩固。\n\n最后，物理各个模块的分值占比：',
+                hasChart: 'score'
+            },
+            {
+                type: 'thinking',
+                content: '通过表单量化问题（如力学计算题失分率、电磁学选择题盲点），比口头描述更精准。同时，表单设计需隐含心理暗示：模块化拆分难点，让学生感觉"问题虽多，但个个可击破"。\n\n调取《学生学情诊断表模板》\n调取《薄弱点-专项训练题匹配库》'
+            },
+            {
+                type: 'ai',
+                content: '鸭鸭对你的情况还不太熟悉，能填一下这个表格让鸭鸭看看你的薄弱点在哪里吗？',
+                hasForm: true
+            },
+            {
+                type: 'user',
+                content: '[填写表单：力学基础较好，电学基础薄弱]'
+            },
+            {
+                type: 'thinking',
+                content: '电学基础弱常表现为"电场线方向判断模糊""楞次定律应用生疏"。推荐黄夫人视频因他的"段子式教学"适合碎片化学习，且配套讲义题型与湖北卷吻合度高。\n\n强调"错题记录原因"而非单纯刷题，避免低效重复。\n\n调取《电学模块细分知识点表》\n调取《B站高赞物理课程评价库》筛选适配内容'
+            },
+            {
+                type: 'ai',
+                content: '明白了，看来你力学学得不错，电学基础稍微差点儿哈，那我接下来多给你找点儿针对性的资料。\n\n前期的话你可以先练这份电学专题精选，搭配B站主播黄夫人的视频课，把所有的考点和题型熟悉一遍，在这个过程中要注重解题质量，每道错题都要记录错误的原因。'
+            },
+            {
+                type: 'thinking',
+                content: '后期需训练"题感"，湖北卷物理常设置陷阱（如电磁学多过程问题），限时训练能暴露审题疏漏。\n\n真题需优先练本省卷，但全国卷中相似题型（如2022年全国Ⅰ卷第25题）可补充拓展。\n\n调取《湖北物理真题分类汇编》\n调取《高仿真模拟题难度评级表》'
+            },
+            {
+                type: 'ai',
+                content: '后期再练这份模拟题+真题汇编，掐时间来做，按照高考节奏来模拟练。'
+            },
+            {
+                type: 'user',
+                content: '好的，这些需要练多久呀，我还有80天就高考了。'
+            },
+            {
+                type: 'ai',
+                content: '你每天能花多少时间跟着我练呀。'
+            },
+            {
+                type: 'user',
+                content: '大概1-2小时吧。'
+            },
+            {
+                type: 'thinking',
+                content: '80天拆分为40天，符合"前紧后松"原则（考前20天需回归基础）。插入考试时间冲突时，自动减少当日任务量但延长后期训练，确保总进度不变。\n\n计划卡片需可视化（如甘特图），让学生有"掌控感"。\n\n调取《40天速提分计划模板库》\n调取《学生日程-学习计划自适应算法》'
+            },
+            {
+                type: 'ai',
+                content: '好那我给你定个40天的训练计划吧，前30天是模块训练，后10天是模拟练习，每天一个半小时，你看下可以不，如果你可以你就点添加计划，咱们从明天开始就可以训练了。'
+            },
+            {
+                type: 'plan',
+                title: '数列专项突破',
+                date: '3月31日 - 4月4日 5 天完成',
+                items: [
+                    {
+                        icon: 'video',
+                        title: '视频课程【3节】',
+                        subtitle: '每天1节 · 预计30分钟'
+                    },
+                    {
+                        icon: 'notes',
+                        title: '学习笔记【10页】',
+                        subtitle: '每天2页 · 预计10分钟'
+                    },
+                    {
+                        icon: 'exercises',
+                        title: '练习题【30道】',
+                        subtitle: '每天5道 · 预计30分钟'
+                    }
+                ]
+            },
+            {
+                type: 'user',
+                content: '鸭鸭，我4月23日到4月25日有考试，没法跟着学。'
+            },
+            {
+                type: 'thinking',
+                content: '学生临时反馈考试冲突（4.23-4.25），需在不影响整体提分节奏的前提下，动态调整计划。\n\n冲突影响分析：原计划是40天（含模块+模拟），扣除3天，剩余37天。需判断是"延长总周期"还是"压缩非核心模块"。\n\n优先级策略：学生薄弱点在电学，因此电学专题的20天训练时长不可压缩，而力学巩固部分（已掌握较好）可减少3天。\n\n心理适配：调整后计划需呈现"无缝衔接"感，避免学生因计划变动产生焦虑。技术上采用"时间平移+任务密度微调"，例如将原第15-18天的任务拆分为第15-19天，并降低每日题量5%。\n\n风险管控：检查调整后模拟考频率是否足够（至少5次），确保应试节奏不被打乱。'
+            },
+            {
+                type: 'ai',
+                content: '好，计划我已经调整完了'
+            },
+            {
+                type: 'plan',
+                title: '数列专项突破',
+                date: '3月31日 - 4月4日 5 天完成',
+                items: [
+                    {
+                        icon: 'video',
+                        title: '视频课程【3节】',
+                        subtitle: '每天1节 · 预计30分钟'
+                    },
+                    {
+                        icon: 'notes',
+                        title: '学习笔记【10页】',
+                        subtitle: '每天2页 · 预计10分钟'
+                    },
+                    {
+                        icon: 'exercises',
+                        title: '练习题【30道】',
+                        subtitle: '每天5道 · 预计30分钟'
+                    }
+                ]
+            },
+            {
+                type: 'user',
+                content: '厉害了，从明天开始执行！'
+            },
+            {
+                type: 'ai',
+                content: '加油哦，现在是考验你执行力的时候喽。'
+            }
+        ];
+        
+        // 显示思考状态（包含搜索内容）
+        function showThinking(content) {
+            return new Promise((resolve) => {
+                // 设置思考类型
+                thinkingType.textContent = '思考中';
+                
+                // 清空原有内容
+                thinkingContent.textContent = '';
+                
+                // 展开思考框
+                thinkingContainer.className = 'thinking-container expanded';
+                
+                // 模拟计时器
+                let seconds = 1;
+                const timerInterval = setInterval(() => {
+                    seconds++;
+                    let minutes = Math.floor(seconds / 60);
+                    let remainSeconds = seconds % 60;
+                    thinkingTime.textContent = `${minutes}：${remainSeconds < 10 ? '0' + remainSeconds : remainSeconds}`;
+                }, 1000);
+                
+                // 逐字显示内容 - 降低速度
+                let index = 0;
+                const typeInterval = setInterval(() => {
+                    if (index < content.length) {
+                        thinkingContent.textContent += content[index];
+                        index++;
+                        // 保持滚动到底部
+                        thinkingContent.scrollTop = thinkingContent.scrollHeight;
+                    } else {
+                        clearInterval(typeInterval);
+                        
+                        // 等待一段时间后收起思考框为灵动岛
+                        setTimeout(() => {
+                            clearInterval(timerInterval);
+                            thinkingContainer.className = 'thinking-container collapsed';
+                            setTimeout(() => {
+                                resolve();
+                            }, 500); // 等待收起动画完成
+                        }, 1500);
+                    }
+                }, 60); // 字符速度降低到60ms/字
+            });
+        }
+        
+        // 显示AI消息
+        function showAiMessage(message) {
+            return new Promise((resolve) => {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message ai-message';
+                
+                const contentElement = document.createElement('div');
+                contentElement.className = 'message-content';
+                
+                // 逐字显示内容 - 降低速度
+                messageElement.appendChild(contentElement);
+                chatMessages.appendChild(messageElement);
+                
+                let index = 0;
+                const typeInterval = setInterval(() => {
+                    if (index < message.content.length) {
+                        contentElement.textContent += message.content[index];
+                        index++;
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    } else {
+                        clearInterval(typeInterval);
+                        
+                        // 检查是否需要添加附加内容
+                        if (message.hasOptions) {
+                            setTimeout(() => {
+                                const optionsCard = createOptionsCard();
+                                chatMessages.appendChild(optionsCard);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                                setTimeout(resolve, 800);
+                            }, 300);
+                        } else if (message.hasChart === 'distribution') {
+                            setTimeout(() => {
+                                const chartContainer = document.createElement('div');
+                                chartContainer.style.textAlign = 'center';
+                                
+                                // 添加题型分布图
+                                const typeChart = document.createElement('img');
+                                typeChart.className = 'chart-img';
+                                typeChart.src = 'https://i.gsxcdn.com/2924334756_6wm72169.jpeg';
+                                typeChart.alt = '题型分布图';
+                                
+                                // 添加难度分布图
+                                const difficultyChart = document.createElement('img');
+                                difficultyChart.className = 'chart-img';
+                                difficultyChart.src = 'https://i.gsxcdn.com/2924334022_miwp2r1h.jpeg';
+                                difficultyChart.alt = '难度分布图';
+                                
+                                chartContainer.appendChild(typeChart);
+                                chartContainer.appendChild(difficultyChart);
+                                
+                                chatMessages.appendChild(chartContainer);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                                setTimeout(resolve, 800);
+                            }, 300);
+                        } else if (message.hasChart === 'frequency') {
+                            setTimeout(() => {
+                                const chartContainer = document.createElement('div');
+                                chartContainer.style.textAlign = 'center';
+                                
+                                const frequencyChart = document.createElement('img');
+                                frequencyChart.className = 'chart-img';
+                                frequencyChart.src = 'https://i.gsxcdn.com/2924334758_hq2rpx54.jpeg';
+                                frequencyChart.alt = '知识点频率图';
+                                                                chartContainer.appendChild(frequencyChart);
+                                
+                                chatMessages.appendChild(chartContainer);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                                setTimeout(resolve, 800);
+                            }, 300);
+                        } else if (message.hasChart === 'score') {
+                            setTimeout(() => {
+                                const chartContainer = document.createElement('div');
+                                chartContainer.style.textAlign = 'center';
+                                
+                                const scoreChart = document.createElement('img');
+                                scoreChart.className = 'chart-img';
+                                scoreChart.src = 'https://i.gsxcdn.com/2924334752_z1k279rr.jpeg';
+                                scoreChart.alt = '分值占比图';
+                                
+                                chartContainer.appendChild(scoreChart);
+                                
+                                chatMessages.appendChild(chartContainer);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                                setTimeout(resolve, 800);
+                            }, 300);
+                        } else if (message.hasForm) {
+                            setTimeout(() => {
+                                const formContainer = createPhysicsForm();
+                                chatMessages.appendChild(formContainer);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                                setTimeout(resolve, 800);
+                            }, 300);
+                        } else {
+                            setTimeout(resolve, 800);
+                        }
+                    }
+                }, 40); // 字符速度降低到40ms/字
+            });
+        }
+        
+        // 创建选项卡
+        function createOptionsCard() {
+            const optionsCard = document.createElement('div');
+            optionsCard.className = 'options-card';
+            
+            const options = ['高一', '高二', '高三'];
+            
+            options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                optionElement.textContent = option;
+                
+                // 设置高三为选中状态
+                if (option === '高三') {
+                    optionElement.classList.add('selected');
+                }
+                
+                optionsCard.appendChild(optionElement);
+            });
+            
+            return optionsCard;
+        }
+        
+        // 创建物理学科表单
+        function createPhysicsForm() {
+            const formContainer = document.createElement('div');
+            formContainer.className = 'form-container';
+            
+            const formTitle = document.createElement('div');
+            formTitle.className = 'form-title';
+            formTitle.textContent = '物理学习情况调查表';
+            formContainer.appendChild(formTitle);
+            
+            const modules = [
+                '力学模块',
+                '电磁学模块',
+                '选修模块',
+                '实验模块',
+                '计算模块'
+            ];
+            
+            const options = [
+                '一般不会错',
+                '偶尔错',
+                '经常错'
+            ];
+            
+            modules.forEach(module => {
+                const formGroup = document.createElement('div');
+                formGroup.className = 'form-group';
+                
+                const formLabel = document.createElement('div');
+                formLabel.className = 'form-label';
+                formLabel.textContent = module;
+                formGroup.appendChild(formLabel);
+                
+                const radioOptions = document.createElement('div');
+                radioOptions.className = 'radio-options';
+                
+                options.forEach((option, index) => {
+                    const radioOption = document.createElement('div');
+                    radioOption.className = 'radio-option';
+                    
+                    const radioInput = document.createElement('input');
+                    radioInput.type = 'radio';
+                    radioInput.name = module;
+                    radioInput.id = `${module}-${index}`;
+                    
+                    // 力学基础较好，电学基础薄弱
+                    if (module === '力学模块' && option === '一般不会错') {
+                        radioInput.checked = true;
+                    } else if (module === '电磁学模块' && option === '经常错') {
+                        radioInput.checked = true;
+                    } else if (option === '偶尔错') {
+                        radioInput.checked = true;
+                    }
+                    
+                    const radioLabel = document.createElement('label');
+                    radioLabel.htmlFor = `${module}-${index}`;
+                    radioLabel.textContent = option;
+                    
+                    radioOption.appendChild(radioInput);
+                    radioOption.appendChild(radioLabel);
+                    radioOptions.appendChild(radioOption);
+                });
+                
+                formGroup.appendChild(radioOptions);
+                formContainer.appendChild(formGroup);
+            });
+            
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'submit-btn';
+            submitBtn.textContent = '提交';
+            formContainer.appendChild(submitBtn);
+            
+            return formContainer;
+        }
+        
+        // 显示用户消息
+        function showUserMessage(content) {
+            return new Promise((resolve) => {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message user-message';
+                
+                const contentElement = document.createElement('div');
+                contentElement.className = 'message-content';
+                contentElement.textContent = content;
+                
+                messageElement.appendChild(contentElement);
+                chatMessages.appendChild(messageElement);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // 添加一个短暂延迟，让用户消息显示一会儿
+                setTimeout(resolve, 1200);
+            });
+        }
+        
+        // 显示计划卡片
+        function showPlan(plan) {
+            return new Promise((resolve) => {
+                const planCardElement = document.createElement('div');
+                planCardElement.className = 'plan-card';
+                
+                const planTitleElement = document.createElement('div');
+                planTitleElement.className = 'plan-title';
+                planTitleElement.textContent = plan.title;
+                
+                const planDateElement = document.createElement('div');
+                planDateElement.className = 'plan-date';
+                planDateElement.textContent = plan.date;
+                
+                planCardElement.appendChild(planTitleElement);
+                planCardElement.appendChild(planDateElement);
+                
+                plan.items.forEach(item => {
+                    const planItemElement = document.createElement('div');
+                    planItemElement.className = 'plan-item';
+                    
+                    const planIconElement = document.createElement('div');
+                    planIconElement.className = 'plan-icon';
+                    
+                    // 根据图标类型添加不同的SVG
+                    let iconSvg = '';
+                    if (item.icon === 'video') {
+                        iconSvg = '<svg viewBox="0 0 24 24" fill="#DC74E9"><path d="M8,5.14V19.14L19,12.14L8,5.14Z"/></svg>';
+                    } else if (item.icon === 'notes') {
+                        iconSvg = '<svg viewBox="0 0 24 24" fill="#F37B30"><path d="M3,3H21V21H3V3M7,7V5H5V7H7M7,13V9H5V13H7M5,15V17H7V15H5M9,5V7H21V5H9M9,9V13H21V9H9M9,15V17H21V15H9Z"/></svg>';
+                    } else if (item.icon === 'exercises') {
+                        iconSvg = '<svg viewBox="0 0 24 24" fill="#2A95E7"><path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,5V19H5V5H19Z"/></svg>';
+                    }
+                    
+                    planIconElement.innerHTML = iconSvg;
+                    
+                    const planDetailsElement = document.createElement('div');
+                    planDetailsElement.className = 'plan-details';
+                    
+                    const planItemTitleElement = document.createElement('div');
+                    planItemTitleElement.className = 'plan-item-title';
+                    planItemTitleElement.textContent = item.title;
+                    
+                    const planItemSubtitleElement = document.createElement('div');
+                    planItemSubtitleElement.className = 'plan-item-subtitle';
+                    planItemSubtitleElement.textContent = item.subtitle;
+                    
+                    planDetailsElement.appendChild(planItemTitleElement);
+                    planDetailsElement.appendChild(planItemSubtitleElement);
+                    
+                    planItemElement.appendChild(planIconElement);
+                    planItemElement.appendChild(planDetailsElement);
+                    
+                    planCardElement.appendChild(planItemElement);
+                });
+                
+                const addPlanBtnElement = document.createElement('div');
+                addPlanBtnElement.className = 'add-plan-btn';
+                addPlanBtnElement.textContent = '添加计划';
+                
+                planCardElement.appendChild(addPlanBtnElement);
+                
+                chatMessages.appendChild(planCardElement);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                setTimeout(resolve, 1500);
+            });
+        }
+        
+        // 添加时间标记
+        function addTimeMarker() {
+            return new Promise((resolve) => {
+                const now = new Date();
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                
+                const timeMarker = document.createElement('div');
+                timeMarker.className = 'time-marker';
+                timeMarker.textContent = `${hours}:${minutes}`;
+                
+                chatMessages.appendChild(timeMarker);
+                
+                setTimeout(resolve, 500);
+            });
+        }
+        
+        // 逐步显示对话
+        async function showConversation() {
+            let lastMessageType = null;
+            let messageCount = 0;
+            
+            for (let i = 0; i < conversation.length; i++) {
+                const message = conversation[i];
+                
+                // 每4条消息添加一个时间标记
+                if (messageCount % 4 === 0 && (message.type === 'ai' || message.type === 'user')) {
+                    await addTimeMarker();
+                }
+                
+                // 根据消息类型选择不同的显示方式
+                if (message.type === 'thinking') {
+                    await showThinking(message.content);
+                    // 思考后不增加消息计数
+                } else if (message.type === 'ai') {
+                    // 如果前一条不是thinking，先添加一个小延迟
+                    if (lastMessageType !== 'thinking') {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                    await showAiMessage(message);
+                    messageCount++;
+                } else if (message.type === 'user') {
+                    // 用户消息之前添加一个小延迟
+                    await new Promise(resolve => setTimeout(resolve, 1200));
+                    await showUserMessage(message.content);
+                    messageCount++;
+                } else if (message.type === 'plan') {
+                    // 计划卡片前添加一个适当延迟
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    await showPlan(message);
+                    messageCount++;
+                }
+                
+                lastMessageType = message.type;
+                
+                // 添加消息之间的间隙
+                if (i < conversation.length - 1) {
+                    // 不同类型的消息之间添加不同的延迟
+                    const nextMessage = conversation[i + 1];
+                    if (nextMessage.type === 'thinking') {
+                        // 思考前添加较短延迟
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    } else if (nextMessage.type === 'user') {
+                        // 用户回复前添加较长延迟，模拟真实对话
+                        await new Promise(resolve => setTimeout(resolve, 1800));
+                    } else {
+                        // 默认延迟
+                        await new Promise(resolve => setTimeout(resolve, 1200));
+                    }
+                }
+            }
+            
+            // 对话结束后设置输入框为可用
+            document.querySelector('.input-field').placeholder = '对话已完成，继续发送消息...';
+        }
+        
+        // 添加点击事件，点击灵动岛可以展开/收起
+        thinkingContainer.addEventListener('click', function() {
+            if (this.className.includes('collapsed')) {
+                this.className = 'thinking-container expanded';
+            } else {
+                this.className = 'thinking-container collapsed';
+            }
+        });
+        
+        // 页面加载后开始显示对话
+        window.onload = showConversation;
+    </script>
+</body>
+</html>

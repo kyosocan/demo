@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>鸭鸭互动界面</title>
+  <style>
+    @font-face { font-family: 'FZSuHei-R'; src: url('FZSuHei-Regular.ttf') format('truetype'); }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background-color: #f0f0f0; height: 100vh; display: flex;
+      justify-content: center; align-items: center; font-family: 'PingFang SC', sans-serif;
+    }
+    .phone-frame {
+      width: 375px; height: 812px; background: url('background.png') no-repeat center center;
+      background-size: cover; position: relative; border-radius: 30px; overflow: hidden;
+    }
+    .time-img {
+      position: absolute; top: 8px; left: -4px; width: 375px; height: 44px; 
+      z-index: 11; transition: opacity 0.5s ease;
+    }
+    .time-img.fade-out { opacity: 0; }
+    .dynamic-island {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      background-color: rgba(1, 1, 1, 0.8); border-radius: 37px; z-index: 10;
+      transition: width 0.8s ease, height 0.8s ease; overflow: hidden;
+      display: flex; flex-direction: column; align-items: flex-start; padding: 0;
+      width: 134px; min-height: 36px; backdrop-filter: blur(10.7px);
+      -webkit-backdrop-filter: blur(10.7px);
+    }
+    .dynamic-island.expanded-step1 { width: 347px; height: 68px; }
+    .dynamic-island.expanded-step2 { width: 347px; height: 182px; }
+    .dynamic-island.expanded-step3 { width: 347px; height: 282px; }
+    .dynamic-island.expanded-step4 { width: 347px; height: 248px; }
+    .dynamic-island.shrink { width: 347px; height: 119px; }
+    .eye-container {
+      display: flex; justify-content: center; align-items: center; gap: 12px;
+      animation: lookAround 8s ease-in-out infinite; transition: opacity 0.5s ease;
+      opacity: 1; padding-top: 8px; width: 100%;
+    }
+    .eye-container.fade-out { opacity: 0; }
+    .eye-container.hidden { display: none; }
+    .eye {
+      width: 18px; height: 22px; background-color: #6ef089;
+      border-radius: 50% / 40%; transition: height 0.2s ease;
+    }
+    .eye.blink { animation: blinkAnim 0.3s ease-in-out forwards; }
+    @keyframes blinkAnim {
+      0% { height: 22px; } 50% { height: 4px; } 100% { height: 22px; }
+    }
+    @keyframes lookAround {
+      0% { transform: translateX(0); } 20% { transform: translateX(8px); }
+      40% { transform: translateX(-8px); } 60% { transform: translateX(0); }
+      100% { transform: translateX(0); }
+    }
+    .thinking-text {
+      position: absolute; left: 24px; top: 26px; font-family: 'FZSuHei-R', sans-serif;
+      font-size: 16px; line-height: 18px; letter-spacing: 0.08em; color: #94FAA1;
+      opacity: 0; transition: opacity 0.5s ease; white-space: nowrap;
+    }
+    .thinking-text.visible { opacity: 1; }
+    #think-icon {
+      position: absolute; left: 24px; top: 62px; width: 12px; height: 9px;
+      z-index: 12; opacity: 0; transition: opacity 0.5s ease;
+    }
+    #think-icon.visible { opacity: 1; }
+    .analysis-text {
+      position: absolute; left: 42px; right: 29px; top: 56px;
+      font-family: 'PingFang SC', sans-serif; font-size: 14px; font-weight: normal;
+      line-height: 20px; letter-spacing: 0.1em; color: #94FAA1; opacity: 0;
+      transition: opacity 0.5s ease; text-align: justify; text-justify: inter-word;
+      max-width: 276px;
+    }
+    .analysis-text.visible { opacity: 0.5; }
+    #find-icon {
+      position: absolute; left: 23.2px; top: 202px; width: 12px; height: 12px;
+      z-index: 12; opacity: 0; transition: opacity 0.5s ease;
+    }
+    #find-icon.visible { opacity: 1; }
+    #find-icon-2 {
+      position: absolute; left: 23.2px; top: 181px; width: 12px; height: 12px;
+      z-index: 12; opacity: 0; transition: opacity 0.5s ease;
+    }
+    #find-icon-2.visible { opacity: 1; }
+    .extra-text {
+      position: absolute; font-family: 'PingFang SC', sans-serif; font-size: 12px;
+      font-weight: normal; line-height: 20px; color: rgba(111, 255, 243, 0.7);
+      background-color: rgba(148, 250, 161, 0.2); padding: 4px 14px; white-space: nowrap;
+      border-radius: 20px; opacity: 0; transition: opacity 0.5s ease;
+    }
+    #extra-line1 { left: 45px; top: 192px; }
+    #extra-line2 { left: 56px; top: 254px; }
+    #extra-line1-2 { left: 42px; top: 173px; }
+    #extra-line2-2 { 
+      left: 42px; top: 213px; 
+      white-space: normal; /* 允许换行 */
+      max-width: 275px; /* 设置最大宽度 */
+      width: auto; /* 宽度自适应 */
+      right: 30px; /* 与右边界保持距离 */
+    }
+    .extra-text.visible { opacity: 1; }
+    .message-box {
+      position: absolute; left: 15px; top: 65px; width: 346px;
+      background-color: rgba(255, 255, 255, 0.4); border-radius: 20px; padding: 14px 22px;
+      font-size: 14px; font-weight: 500; color: #585858; line-height: 20px;
+      letter-spacing: 0.12em; box-shadow: 0 0 25px rgba(195, 225, 149, 0.35);
+      z-index: 6; transition: top 0.8s ease;
+    }
+    .message-box-2 {
+      position: absolute; left: 15px; width: 346px; background-color: rgba(255, 255, 255, 0.4);
+      border-radius: 20px; padding: 14px 22px; font-size: 14px; font-weight: 500;
+      color: #585858; line-height: 20px; letter-spacing: 0.12em;
+      box-shadow: 0 0 25px rgba(195, 225, 149, 0.35); z-index: 6; opacity: 0;
+      transition: opacity 0.5s ease, top 0.8s ease;
+    }
+    .options-container {
+      position: relative;
+      width: 100%;
+      opacity: 0; 
+      z-index: 6;
+      margin: 10px 0;
+      transition: opacity 0.8s ease;
+    }
+    .option, .province-option {
+      width: 100%;
+      max-width: 346px;
+      height: 60px;
+      margin: 0 auto 12px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 18px;
+      box-shadow: 0 2px 25px rgba(195, 225, 149, 0.3);
+      transition: all 0.3s ease;
+    }
+    .option {
+      background-color: rgba(255, 255, 255, 0.4);
+    }
+    .province-option {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    .grade-tag, .province-tag {
+      display: inline-block;
+      float: right;
+      background-color: rgba(20, 53, 21, 0.4);
+      border-radius: 20px;
+      padding: 8px 16px;
+      color: rgba(255, 255, 255, 1);
+      font-family: 'PingFang SC', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 20px;
+      letter-spacing: 0.08em;
+      opacity: 0;
+      margin-left: 10px;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      white-space: nowrap;
+      z-index: 7;
+    }
+    .grade-tag.visible { opacity: 1; }
+    .province-tag.visible { opacity: 1; }
+    .main-func-bg {
+      position: absolute; left: 0; top: 724px; width: 375px; height: 88px; z-index: 5;
+    }
+    .task-icon, .duck-icon, .my-icon { position: absolute; z-index: 6; }
+    .task-icon { left: 57px; top: 740.02px; width: 29px; height: 31.23px; }
+    .duck-icon { left: 159px; top: 724px; width: 58px; height: 57.19px; }
+    .my-icon { left: 288px; top: 739px; width: 27px; height: 32.6px; }
+    #message-container {
+      position: absolute;
+      top: 65px;
+      left: 0;
+      right: 0;
+      bottom: 100px;
+      overflow-y: auto;
+      padding: 0 15px;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* 用户消息样式 */
+    .user-message {
+      position: relative !important;
+      width: auto !important;
+      max-width: 80%;
+      margin-bottom: 12px;
+      border-radius: 18px;
+      padding: 14px 22px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #585858;
+      line-height: 20px;
+      letter-spacing: 0.12em;
+      box-shadow: 0 0 25px rgba(195, 225, 149, 0.35);
+      word-wrap: break-word;
+      z-index: 6;
+      background-color: rgba(178, 231, 178, 0.6) !important;
+      align-self: flex-end;
+      margin-right: 5px;
+      text-align: center;
+      font-size: 16px !important;
+    }
+    
+    /* AI消息样式调整 */
+    .message-box:not(.user-message) {
+      background-color: rgba(255, 255, 255, 0.4);
+      align-self: flex-start;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <img class="time-img" src="time.png" alt="状态栏" id="time-img" />
+
+    <div class="dynamic-island" id="dynamic-island">
+      <div class="eye-container" id="eye-container">
+        <div class="eye"></div>
+        <div class="eye"></div>
+      </div>
+      <div class="thinking-text" id="thinking-text">思考中</div>
+      <img id="think-icon" src="think icon.png" alt="思考图标" />
+      <div id="analysis-text" class="analysis-text"></div>
+      <img id="find-icon" src="find.png" alt="查找图标" />
+      <div id="extra-line1" class="extra-text"></div>
+      <div id="extra-line2" class="extra-text"></div>
+    </div>
+
+    <div id="message-container"></div>
+    
+    <div class="options-container" id="options-container">
+      <div class="option" id="option1">高一</div>
+      <div class="option" id="option2">高二</div>
+      <div class="option" id="option3">高三</div>
+    </div>
+    
+    <div class="province-options-container" id="province-options-container">
+      <div class="province-option" id="province1">湖北</div>
+      <div class="province-option" id="province2">湖南</div>
+      <div class="province-option" id="province3">河北</div>
+    </div>
+    
+    <div class="grade-tag" id="grade-tag"></div>
+    <div class="province-tag" id="province-tag"></div>
+
+    <img class="main-func-bg" src="Main functional background.png" alt="功能区背景" />
+    <img class="task-icon" src="task01.png" alt="任务图标" />
+    <img class="duck-icon" src="duck.png" alt="鸭鸭图标" />
+    <img class="my-icon" src="my.png" alt="我的图标" />
+  </div>
+
+  <script>
+    // 重新设计对话流数据结构
+    const dialogueFlow = [
+      // 第一轮：问年级
+      {
+        aiMessage: '嗨同学！我是伴学鸭~你叫我鸭鸭就好！你现在上高几呀？',
+        userReply: {
+          type: 'options',
+          container: 'options-container',
+          options: ['高一', '高二', '高三'],
+          defaultOption: '高三',
+          timeout: 1500,
+          tag: {
+            element: 'grade-tag',
+            position: { top: '145px', left: '287px' }
+          }
+        },
+        thinking: {
+          analysis: '学生选择"高三"后，需快速共情——高三压力大，时间紧迫，要传递"我理解你的难处"的信号。询问省份是为了定位考纲差异（如湖北新高考、全国卷等），不同省份考点权重、命题风格差异较大。',
+          extraLines: [
+            '调取《省份考纲差异库》'
+          ],
+          expandStep: 'expanded-step4'
+        }
+      },
+      
+      // 第二轮：问省份
+      {
+        aiMessage: '高三党不容易呀，还有几十天就高考了呢，你在哪个省奋斗呢？',
+        userReply: {
+          type: 'options',
+          container: 'province-options-container',
+          options: ['湖北', '湖南', '河北'],
+          defaultOption: '湖北',
+          timeout: 1000,
+          tag: {
+            element: 'province-tag',
+            position: { top: '372px', right: '14px' }
+          }
+        },
+        thinking: {
+          analysis: '通过"湖北小伙伴"强化地域共鸣，暗示"我对你的情况很了解"。开放式提问"感觉咋样"既能引导倾诉，又能观察学生情绪状态。若学生抱怨，需优先情绪安抚；若沉默，则需进一步引导。',
+          extraLines: [
+            '检索《湖北近3年模考难度系数表》',
+            '确认是否近期模考难度确实高于往年（用于后续客观分析）'
+          ],
+          expandStep: 'expanded-step3'
+        }
+      },
+      
+      // 第三轮：询问感受
+      {
+        aiMessage: '哎呀，鸭鸭的湖北小伙伴们都说最近的模考难度爆表呢，你感觉咋样？',
+        userReply: {
+          type: 'text',
+          text: '模考已崩，物理才50，我想上一本，啊啊啊啊啊.....',
+          style: {
+            position: 'right',
+            backgroundColor: 'rgba(178, 231, 178, 0.6)'
+          }
+        },
+        thinking: {
+          analysis: '学生表现出焦虑情绪，需先稳定情绪再给方案。"物理50"是核心信息，要快速判断：50分在湖北物理卷中的位置（通常满分100，50分处于中下水平），结合一本线推算需提升的分数区间。用"不慌"快速镇定学生情绪，"分析局势"体现专业性。追问其他科目是为判断提分优先级——如果其他科已接近天花板，则需全力冲刺物理；若其他科也有空间，则需统筹规划。',
+          extraLines: [
+            '调用《湖北近3年一本线分数换算表》'
+          ],
+          expandStep: 'expanded-step3'
+        }
+      },
+      
+      // 第四轮：分析情况
+      {
+        aiMessage: '不慌，容鸭鸭帮你分析下局势，你其他科都怎么样啊，考一本你物理需要提升到多少？',
+        userReply: {
+          type: 'text',
+          text: '其他科倒还好，物理怎么也得冲到80分，现在完全没有思路怎么学。',
+          style: {
+            position: 'right',
+            backgroundColor: 'rgba(178, 231, 178, 0.6)'
+          }
+        },
+        thinking: {
+          analysis: '学生提到"物理冲到80分"的目标时，表现出明显的焦虑和自我怀疑。作为老师，我需要快速传递希望，用具体数据替代空洞安慰。策略：锚定效应：用"30-40分"的明确提升幅度，让学生对标可实现的路径；社会认同：强调"往期同学"的成功案例，降低孤独感；目标拆解：暗示"2个月"的短期冲刺可行性，避免学生被"80天"的长期压力击垮。潜在风险：若学生追问成功率，需后续补充数据细节，但当前优先稳定情绪。',
+          extraLines: [
+            '调用《短期提分案例库》'
+          ],
+          expandStep: 'expanded-step3'
+        }
+      },
+      
+      // 第五轮：提供希望
+      {
+        aiMessage: '好，明白了，别急哈，咱们往期有很多同学在2个月内提升过30-40分呢。',
+        thinking: {
+          analysis: '学生当前分数隐含两个信息：基础题已掌握（50分≈及格线），但中高频考点存在漏洞。需明确传递"你有潜力，只需精准补漏"的结论：诊断逻辑：肯定基础：50分≠零基础，避免学生陷入"我什么都差"的消极归因；问题定位：强调"薄弱板块"而非"全部重学"，减少认知负荷；行动导向：为后续推送表单埋下伏笔（"针对薄弱"需先明确薄弱点）。潜台词：学生可能因焦虑陷入盲目刷题，需引导其转向结构化学习。',
+          extraLines: [
+            '调取《物理题型分层模型》，分析50分段学生典型失分模块（如电磁学中"带电粒子运动"占比＞30%）',
+            '匹配《湖北高考难度梯度表》，定位50→80分需攻克的B类中档题（放弃C类压轴题，主抓性价比）'
+          ],
+          expandStep: 'expanded-step4'
+        }
+      },
+      
+      // 第六轮：肯定基础
+      {
+        aiMessage: '你现在50分说明有一定基础，接下来就得针对薄弱板块进行提升了呢。',
+        thinking: {
+          analysis: '在铺垫希望和逻辑后，需引导学生主动参与诊断，避免"填表"显得突兀：设计逻辑：降低门槛：用"说说"软化表单的正式感，减少抗拒心理；选项引导：表单需预设高频失分模块（如电磁学、力学综合题），避免学生因回忆模糊放弃填写；数据驱动：为后续个性化计划提供依据，同时让学生感知到"专业分析"的价值。风险预判：若学生填写模糊（如"都差"），需准备追问话术（如"哪部分上课听最懵？"）。',
+          extraLines: [
+            '调用《物理知识点分类表单模板》'
+          ],
+          expandStep: 'expanded-step3'
+        }
+      },
+      
+      // 第七轮：表单调研
+      {
+        aiMessage: '你可以和我说说你哪部分丢分最多吗？可以填下这个表。',
+        userReply: {
+          type: 'form',
+          form: {
+            title: '物理学习情况调研',
+            fields: [
+              { 
+                type: 'checkbox', 
+                label: '请选择你认为自己最薄弱的物理模块（多选）',
+                options: ['力学', '电学', '热学', '光学', '原子物理']
+              },
+              {
+                type: 'radio',
+                label: '你认为自己目前最需要提升的是',
+                options: ['基础知识', '解题思路', '计算能力', '应用能力']
+              }
+            ],
+            submitButton: '提交'
+          }
+        },
+        thinking: {
+          analysis: '根据表单数据（力学正确率60%、电学30%），判断学生知识结构断层点。力学是物理基础，电学更依赖抽象思维，需针对性补足电磁学模块。同时暗示"力学有救，电学可突破"，增强学生信心。',
+          extraLines: [
+            '匹配《电磁学高频考点清单》，筛选湖北近5年出现2次以上的考点（如电磁感应、复合场）'
+          ],
+          expandStep: 'expanded-step3'
+        }
+      },
+      
+      // 第八轮：确认问题
+      {
+        aiMessage: '明白了，看来你力学学得不错，电学基础稍微差点儿。',
+        thinking: {
+          analysis: '用数据说话，避免空洞鼓励。强调"一年两考"让学生意识到这些专题的性价比，同时传递"冲刺这些题能快速提分"的战术。需同步思考如何将高频考点与学生薄弱点结合。',
+          extraLines: [
+            '调取《湖北物理专题考频图谱》，标注电磁学高频题型和对应解题模板'
+          ],
+          expandStep: 'expanded-step3'
+        }
+      },
+      
+      // 第九轮：考题分析
+      {
+        aiMessage: '我们看下近四年湖北的考题哈，电磁学模块电场、磁场、电磁感应均出现过⼀年两考，这几个专题是你接下来要重点要攻克的对象。',
+        visualContent: {
+          type: 'chart',
+          chartData: {
+            type: '考频统计图',
+            imageUrl: 'chart-placeholder.png'
+          }
+        },
+        userReply: {
+          type: 'text',
+          text: '好的，那我应该怎么学呢，现在上课我已经听不懂了。',
+          style: {
+            position: 'right',
+            backgroundColor: 'rgba(178, 231, 178, 0.6)'
+          }
+        },
+        thinking: {
+          analysis: '制定"先补基础再模拟"的进阶路径。选择黄夫人课程因其通俗易懂、适合基础薄弱学生；错题记录是提分关键，需强调过程管理。同时考虑学生时间有限，资源必须精准匹配。',
+          extraLines: [
+            '从《合作课程资源库》提取B站黄夫人电磁学播放量TOP5视频，关联错题本功能调用记录'
+          ],
+          expandStep: 'expanded-step4'
+        }
+      },
+      
+      // 第十轮：学习资源
+      {
+        aiMessage: '嗯，前期的话你可以先练这份电学专题精选，搭配B站主播黄夫人的视频课，把所有的考点和题型熟悉一遍，在这个过程中要注重解题质量，每道错题都要记录错误的原因。',
+        visualContent: {
+          type: 'resourceCards',
+          cards: [
+            {
+              type: '视频课清单',
+              title: '黄夫人电磁学基础课',
+              items: ['电场基础', '磁场入门', '电磁感应详解', '交变电流', '电磁波']
+            },
+            {
+              type: '练习题清单',
+              title: '电学专题精选',
+              count: '100题'
+            }
+          ]
+        },
+        followUpMessage: '后期再练这份模拟题+真题汇编，掐时间来做，按照高考节奏来模拟练。',
+        visualContent2: {
+          type: 'resourceCards',
+          cards: [
+            {
+              type: '练习题清单',
+              title: '物理冲刺模拟+真题',
+              count: '10套'
+            }
+          ]
+        },
+        userReply: {
+          type: 'text',
+          text: '好的，这些需要练多久呀，我还有80天就高考了。',
+          style: {
+            position: 'right',
+            backgroundColor: 'rgba(178, 231, 178, 0.6)'
+          }
+        }
+      },
+      
+      // 第十一轮：时间询问
+      {
+        aiMessage: '你每天能花多少时间跟着我练呀。',
+        userReply: {
+          type: 'text',
+          text: '大概1-2小时吧。',
+          style: {
+            position: 'right',
+            backgroundColor: 'rgba(178, 231, 178, 0.6)'
+          }
+        },
+        thinking: {
+          analysis: '将80天拆分为"基础攻坚+模拟冲刺"符合学习规律。每天1.5小时符合学生时间承诺，避免因强度过高导致放弃。添加计划按钮是行为设计，通过承诺机制提升执行率。',
+          extraLines: [
+            '调用《冲刺阶段时间规划模型》，按7:3分配基础与冲刺练习，嵌入艾宾浩斯遗忘曲线安排错题回顾'
+          ],
+          expandStep: 'expanded-step3'
+        }
+      },
+      
+      // 第十二轮：制定计划
+      {
+        aiMessage: '好那我给你定个80天的训练计划吧，前40天是模块训练，后40天是模拟练习，每天一个半小时，你看下可以不，如果你可以你就点添加计划，咱们从明天开始就可以训练了。',
+        visualContent: {
+          type: 'plan',
+          planData: {
+            title: '物理冲刺80天计划',
+            description: '每天1.5小时，前40天模块训练，后40天模拟演练',
+            buttons: ['预览计划', '添加计划']
+          },
+          confirmation: {
+            message: '已添加任务',
+            button: '开始学习'
+          }
+        }
+      }
+    ];
+
+    // 重构全局变量和流程
+    let currentDialogueIndex = 0;
+    let currentStepStatus = 'initial'; // initial -> aiMessage -> userReply -> thinking -> next
+    let timerInterval = null;
+    let blinkInterval = null;
+    let messageContainer = document.getElementById('message-container');
+
+    // 重写对话处理函数
+    function continueDialogue() {
+      if (currentDialogueIndex >= dialogueFlow.length) return;
+      
+      const dialogueStep = dialogueFlow[currentDialogueIndex];
+      
+      // 根据当前步骤状态处理
+      switch(currentStepStatus) {
+        case 'initial':
+          // 显示AI消息
+          showAIMessage(dialogueStep);
+          break;
+          
+        case 'aiMessage':
+          // 处理视觉内容（如有）
+          if (dialogueStep.visualContent) {
+            showVisualContent(dialogueStep.visualContent);
+          }
+          
+          // 如果有后续消息，显示它
+          if (dialogueStep.followUpMessage) {
+            setTimeout(() => {
+              showFollowUpMessage(dialogueStep.followUpMessage);
+              
+              // 如果有第二组视觉内容，显示它
+              if (dialogueStep.visualContent2) {
+                setTimeout(() => {
+                  showVisualContent(dialogueStep.visualContent2, 'content2');
+                  
+                  // 如果有用户回复，等待一会再显示
+                  if (dialogueStep.userReply) {
+                    setTimeout(() => {
+                      currentStepStatus = 'userReply';
+                      continueDialogue();
+                    }, 1000);
+                  }
+                }, 800);
+              } else if (dialogueStep.userReply) {
+                // 没有第二组视觉内容但有用户回复
+                setTimeout(() => {
+                  currentStepStatus = 'userReply';
+                  continueDialogue();
+                }, 800);
+              }
+            }, 1000);
+          } else if (dialogueStep.userReply) {
+            // 直接处理用户回复
+            setTimeout(() => {
+              currentStepStatus = 'userReply';
+              continueDialogue();
+            }, dialogueStep.visualContent ? 1500 : 800);
+          } else if (dialogueStep.thinking) {
+            // 直接进入思考阶段
+            setTimeout(() => {
+              currentStepStatus = 'thinking';
+              continueDialogue();
+            }, dialogueStep.visualContent ? 1500 : 800);
+          } else {
+            // 没有其他内容，进入下一步对话
+            moveToNextDialogue();
+          }
+          break;
+          
+        case 'userReply':
+          // 处理用户回复
+          handleUserReply(dialogueStep.userReply);
+          break;
+          
+        case 'thinking':
+          // 进入思考模式
+          if (dialogueStep.thinking) {
+            startThinkingProcess(currentDialogueIndex);
+          } else {
+            // 如果没有思考部分，直接进入下一步
+            moveToNextDialogue();
+          }
+          break;
+      }
+    }
+
+    // 显示AI消息
+    function showAIMessage(dialogueStep) {
+      const messageBoxId = `message-box-${currentDialogueIndex}`;
+      const messageBox = createMessageBox(messageBoxId);
+      
+      // 确保正确定位（增加延迟以确保DOM更新）
+      setTimeout(() => {
+        positionElement(messageBox);
+        
+        // 显示消息内容
+        typeText(messageBox, dialogueStep.aiMessage, () => {
+          // 消息显示完成后，滚动到底部
+          scrollToBottom();
+          
+          // 更新状态
+          currentStepStatus = 'aiMessage';
+          continueDialogue();
+        });
+      }, 50);
+    }
+
+    // 显示视觉内容（图表、资源卡片等）
+    function showVisualContent(content, suffix = '') {
+      let container;
+      
+      switch(content.type) {
+        case 'chart':
+          container = createChartContainer(content.chartData);
+          break;
+          
+        case 'resourceCards':
+          container = createResourceCardsContainer(content.cards);
+          break;
+          
+        case 'plan':
+          container = createPlanContainer(content.planData, content.confirmation);
+          break;
+      }
+      
+      // 确保容器使用相对布局
+      if (container) {
+        container.id = `visual-content-${currentDialogueIndex}-${suffix}`;
+        container.style.position = 'relative';
+        container.style.marginBottom = '15px';
+        container.style.width = '100%';
+        container.style.maxWidth = '346px';
+        container.style.alignSelf = 'flex-start';
+        
+        // 滚动到底部
+        scrollToBottom();
+      }
+    }
+
+    // 创建图表容器
+    function createChartContainer(chartData) {
+      const container = document.createElement('div');
+      container.className = 'chart-container';
+      container.style.position = 'absolute';
+      container.style.left = '15px';
+      container.style.width = '346px';
+      container.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+      container.style.borderRadius = '16px';
+      container.style.padding = '12px';
+      container.style.boxShadow = '0 2px 15px rgba(195, 225, 149, 0.25)';
+      container.style.zIndex = '7';
+      
+      // 图表标题
+      const title = document.createElement('div');
+      title.style.fontSize = '15px';
+      title.style.fontWeight = 'bold';
+      title.style.marginBottom = '8px';
+      title.style.color = '#3a3a3a';
+      title.style.textAlign = 'center';
+      title.textContent = chartData.type;
+      container.appendChild(title);
+      
+      // 图表图片
+      if (chartData.imageUrl) {
+        const image = document.createElement('img');
+        image.src = chartData.imageUrl;
+        image.alt = chartData.type;
+        image.style.maxWidth = '100%';
+        image.style.height = 'auto';
+        image.style.borderRadius = '8px';
+        container.appendChild(image);
+      }
+      
+      messageContainer.appendChild(container);
+      return container;
+    }
+
+    // 创建资源卡片容器
+    function createResourceCardsContainer(cards) {
+      const container = document.createElement('div');
+      container.className = 'resource-cards-container';
+      container.style.position = 'absolute';
+      container.style.left = '15px';
+      container.style.width = '346px';
+      container.style.zIndex = '7';
+      
+      cards.forEach(card => createResourceCard(card, container));
+      
+      messageContainer.appendChild(container);
+      return container;
+    }
+
+    // 创建计划容器
+    function createPlanContainer(planData, confirmation) {
+      const container = document.createElement('div');
+      container.className = 'plan-container';
+      container.style.position = 'absolute';
+      container.style.left = '15px';
+      container.style.width = '346px';
+      container.style.zIndex = '7';
+      
+      const planCard = createPlanCard(planData, () => {
+        // 计划添加后的处理
+        moveToNextDialogue();
+      });
+      
+      container.appendChild(planCard);
+      messageContainer.appendChild(container);
+      
+      // 模拟点击添加按钮
+      setTimeout(() => {
+        const addButton = planCard.querySelector('button:last-child');
+        if (addButton) addButton.click();
+      }, 1500);
+      
+      return container;
+    }
+
+    // 显示后续消息
+    function showFollowUpMessage(text) {
+      const followUpId = `followup-${currentDialogueIndex}`;
+      const followUpBox = createMessageBox(followUpId);
+      
+      // 确保正确定位（增加延迟以确保DOM更新）
+      setTimeout(() => {
+        positionElement(followUpBox);
+        
+        // 显示消息内容
+        typeText(followUpBox, text, () => {
+          // 消息显示完成后，滚动到底部
+          scrollToBottom();
+        });
+      }, 50);
+    }
+
+    // 处理用户回复
+    function handleUserReply(userReply) {
+      switch(userReply.type) {
+        case 'options':
+          showOptions(userReply);
+          break;
+          
+        case 'text':
+          showUserText(userReply);
+          break;
+          
+        case 'form':
+          showForm(userReply.form);
+          break;
+      }
+    }
+
+    // 显示选项
+    function showOptions(options) {
+      const container = document.getElementById(options.container);
+      
+      if (container) {
+        // 创建包装容器确保正确定位
+        const wrapper = document.createElement('div');
+        wrapper.className = 'options-wrapper';
+        messageContainer.appendChild(wrapper);
+        
+        // 将选项容器移动到包装容器中
+        wrapper.appendChild(container);
+        
+        // 设置容器样式
+        container.style.position = 'relative';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.alignItems = 'center';
+        container.style.width = '100%';
+        container.style.maxWidth = '346px';
+        container.classList.add('visible');
+        
+        // 滚动到选项可见
+        scrollToBottom();
+        
+        // 设置自动选择默认选项
+        if (options.defaultOption && options.timeout) {
+          setTimeout(() => {
+            const optionIndex = options.options.indexOf(options.defaultOption);
+            if (optionIndex !== -1) {
+              const optionElement = container.children[optionIndex];
+              handleOptionSelection(optionElement, options.defaultOption, options);
+            }
+          }, options.timeout);
+        }
+        
+        // 绑定选项点击事件
+        Array.from(container.children).forEach((option, index) => {
+          option.onclick = () => handleOptionSelection(option, options.options[index], options);
+        });
+      }
+    }
+
+    // 处理选项选择
+    function handleOptionSelection(optionElement, selectedValue, options) {
+      // 移除所有已有的点击事件处理器
+      const container = document.getElementById(options.container);
+      if (container) {
+        Array.from(container.children).forEach(opt => {
+          opt.onclick = null;
+        });
+      }
+      
+      // 添加选中效果
+      optionElement.classList.add('selected');
+      
+      setTimeout(() => {
+        optionElement.classList.add('return-normal');
+        
+        setTimeout(() => {
+          optionElement.classList.remove('selected');
+          optionElement.classList.remove('return-normal');
+          
+          setTimeout(() => {
+            container.classList.add('fade-out');
+            
+            setTimeout(() => {
+              // 如果有标签，创建一个包含标签的消息
+              if (options.tag && options.tag.element) {
+                const messageWithTag = document.createElement('div');
+                messageWithTag.className = 'message-box user-message';
+                messageWithTag.textContent = selectedValue;
+                
+                const tagElement = document.getElementById(options.tag.element);
+                tagElement.style.position = 'static'; // 重要：移除绝对定位
+                tagElement.style.float = 'right';
+                tagElement.style.marginLeft = '8px';
+                tagElement.textContent = selectedValue;
+                tagElement.classList.add('visible');
+                
+                messageWithTag.appendChild(tagElement);
+                messageContainer.appendChild(messageWithTag);
+                
+                // 移除选项容器
+                const wrapper = container.parentElement;
+                if (wrapper && wrapper.className === 'options-wrapper') {
+                  wrapper.remove();
+                }
+              }
+              
+              // 滚动到底部
+              scrollToBottom();
+              
+              setTimeout(() => {
+                // 进入思考阶段
+                currentStepStatus = 'thinking';
+                continueDialogue();
+              }, 600);
+            }, 200);
+          }, 200);
+        }, 500);
+      }, 300);
+    }
+
+    // 显示用户文本
+    function showUserText(userText) {
+      const userBox = document.createElement('div');
+      userBox.className = 'message-box user-message';
+      userBox.textContent = userText.text;
+      
+      // 添加到容器
+      messageContainer.appendChild(userBox);
+      
+      // 滚动到最新消息
+      scrollToBottom();
+      
+      // 用户回复后进入思考阶段
+      setTimeout(() => {
+        currentStepStatus = 'thinking';
+        continueDialogue();
+      }, 1000);
+    }
+
+    // 显示表单
+    function showForm(formData) {
+      const formContainer = createForm(formData, () => {
+        // 表单提交后，进入思考阶段
+        currentStepStatus = 'thinking';
+        continueDialogue();
+      });
+      
+      // 设置相对定位
+      formContainer.style.position = 'relative';
+      formContainer.style.top = 'auto';
+      formContainer.style.marginBottom = '20px';
+      
+      // 滚动到底部
+      scrollToBottom();
+    }
+
+    // 定位元素（基于最后一个可见元素）
+    function positionElement(element) {
+      // 不再依赖绝对定位，而是使用流式布局
+      if (element.classList.contains('message-box') || element.classList.contains('user-message')) {
+        element.style.position = 'relative';
+        element.style.top = 'auto';
+        
+        // 清除旧的定位
+        if (element.style.position === 'absolute') {
+          element.style.position = 'relative';
+          element.style.top = 'auto';
+        }
+      } else {
+        // 对于非消息元素（如图表、资源卡等）仍使用绝对定位
+      const lastElement = getLastVisibleElement();
+      
+      if (lastElement) {
+        const topPosition = lastElement.offsetTop + lastElement.offsetHeight + 20;
+        element.style.top = `${topPosition}px`;
+      } else {
+          element.style.top = '10px';
+        }
+      }
+      
+      // 消息添加后滚动到底部
+      scrollToBottom();
+    }
+
+    // 获取最后一个可见元素
+    function getLastVisibleElement() {
+      // 收集所有可能的UI元素
+      const allElements = [
+        ...document.querySelectorAll('.message-box'),
+        ...document.querySelectorAll('.user-message'),
+        ...document.querySelectorAll('.plan-container'),
+        ...document.querySelectorAll('.resource-cards-container'),
+        ...document.querySelectorAll('.chart-container'),
+        ...document.querySelectorAll('.form-container')
+      ];
+      
+      // 过滤掉没有定位或不可见的元素
+      const visibleElements = allElements.filter(el => {
+        const rect = el.getBoundingClientRect();
+        const style = window.getComputedStyle(el);
+        return rect.height > 0 && 
+               style.opacity !== '0' && 
+               style.display !== 'none' && 
+               el.offsetTop > 0;
+      });
+      
+      // 按照在页面中的位置排序（从上到下）
+      visibleElements.sort((a, b) => a.offsetTop - b.offsetTop);
+      
+      // 返回最下方的元素
+      return visibleElements.length > 0 ? visibleElements[visibleElements.length - 1] : null;
+    }
+
+    // 进入下一个对话步骤
+    function moveToNextDialogue() {
+      currentDialogueIndex++;
+      currentStepStatus = 'initial';
+      
+      if (currentDialogueIndex < dialogueFlow.length) {
+        setTimeout(continueDialogue, 1000);
+      }
+    }
+
+    // 更新思考过程
+    function startThinkingProcess(dialogueIndex) {
+      const dialogueStep = dialogueFlow[dialogueIndex];
+      const thinking = dialogueStep.thinking;
+      const dynamicIsland = document.getElementById('dynamic-island');
+      const eyeContainer = document.getElementById('eye-container');
+      const timeImg = document.getElementById('time-img');
+      const thinkingText = document.getElementById('thinking-text');
+      const thinkIcon = document.getElementById('think-icon');
+      const analysisText = document.getElementById('analysis-text');
+      const findIcon = document.getElementById('find-icon');
+      const extraLine1 = document.getElementById('extra-line1');
+      const extraLine2 = document.getElementById('extra-line2');
+      
+      // 隐藏眼睛和状态栏
+      eyeContainer.classList.add('fade-out');
+      timeImg.classList.add('fade-out');
+      
+      setTimeout(() => {
+        eyeContainer.classList.add('hidden');
+        dynamicIsland.classList.add('expanded-step1');
+        
+        setTimeout(() => {
+          thinkingText.classList.add('visible');
+          startTimer();
+          
+          setTimeout(() => {
+            dynamicIsland.classList.remove('expanded-step1');
+            dynamicIsland.classList.add('expanded-step2');
+            
+            setTimeout(() => {
+              thinkIcon.classList.add('visible');
+              
+              setTimeout(() => {
+                typeText(analysisText, thinking.analysis, null, 30);
+                analysisText.classList.add('visible');
+                
+                setTimeout(() => {
+                  dynamicIsland.classList.remove('expanded-step2');
+                  dynamicIsland.classList.add(thinking.expandStep);
+                  
+                  setTimeout(() => {
+                    // 显示额外文本
+                    showExtraLines(dialogueIndex, thinking, () => {
+                      shrinkIsland(dialogueIndex);
+                    });
+                  }, 500);
+                }, 2000);
+              }, 500);
+            }, 500);
+          }, 1500);
+        }, 300);
+      }, 500);
+    }
+
+    // 收起灵动岛
+    function shrinkIsland(dialogueIndex) {
+      const dynamicIsland = document.getElementById('dynamic-island');
+      const thinkingText = document.getElementById('thinking-text');
+      const thinkIcon = document.getElementById('think-icon');
+      const findIcon = document.getElementById('find-icon');
+      const extraLine1 = document.getElementById('extra-line1');
+      const extraLine2 = document.getElementById('extra-line2');
+      const analysisText = document.getElementById('analysis-text');
+      const eyeContainer = document.getElementById('eye-container');
+      const timeImg = document.getElementById('time-img');
+      
+      clearInterval(timerInterval);
+      
+      // 清除所有思考相关的元素
+      thinkingText.classList.remove('visible');
+      thinkIcon.classList.remove('visible');
+      findIcon.classList.remove('visible');
+      extraLine1.classList.remove('visible');
+      extraLine2.classList.remove('visible');
+      analysisText.classList.remove('visible');
+      
+      // 清空文本内容
+      analysisText.textContent = '';
+      
+      // 移除所有扩展类
+      dynamicIsland.classList.remove('expanded-step1');
+      dynamicIsland.classList.remove('expanded-step2');
+      dynamicIsland.classList.remove('expanded-step3');
+      dynamicIsland.classList.remove('expanded-step4');
+      dynamicIsland.classList.remove('shrink');
+      
+      // 恢复眼睛状态
+      eyeContainer.classList.remove('hidden');
+      eyeContainer.classList.remove('fade-out');
+      timeImg.classList.remove('fade-out');
+      
+      // 等眼睛显示后继续
+      setTimeout(() => {
+        moveToNextDialogue();
+      }, 800);
+    }
+
+    // 初始化
+    function init() {
+      setupBlinking();
+      continueDialogue();
+      
+      // 清理事件处理器
+      window.addEventListener('beforeunload', () => {
+        clearInterval(timerInterval);
+        clearInterval(blinkInterval);
+      });
+    }
+
+    // 添加眨眼动画函数
+    function setupBlinking() {
+      blinkInterval = setInterval(() => {
+        const eyes = document.querySelectorAll('.eye');
+        eyes.forEach(eye => eye.classList.add('blink'));
+        setTimeout(() => {
+          eyes.forEach(eye => eye.classList.remove('blink'));
+        }, 300);
+      }, 4000);
+    }
+
+    // 创建消息框
+    function createMessageBox(id) {
+      const messageBox = document.createElement('div');
+      messageBox.id = id;
+      messageBox.className = 'message-box';
+      messageContainer.appendChild(messageBox);
+      return messageBox;
+    }
+
+    // 类型写入效果
+    function typeText(element, text, callback, speed = 70) {
+      let i = 0;
+      element.textContent = '';
+      
+      function typeChar() {
+        if (i < text.length) {
+          element.innerHTML += text[i];
+          i++;
+          setTimeout(typeChar, speed);
+        } else if (callback) {
+          callback();
+        }
+      }
+      
+      typeChar();
+    }
+
+    // 标签打字效果
+    function typeTag(element, text, position) {
+      if (position) {
+        for (const [key, value] of Object.entries(position)) {
+          element.style[key] = value;
+        }
+      }
+      
+      element.classList.add('visible');
+      element.textContent = '';
+      
+      let index = 0;
+      function typeChar() {
+        if (index < text.length) {
+          element.textContent += text[index];
+          index++;
+          setTimeout(typeChar, 150);
+        }
+      }
+      
+      if (element.id === 'province-tag') {
+        element.style.opacity = '1';
+        element.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        element.style.transform = 'scale(1.05)';
+        
+        setTimeout(() => {
+          element.style.transform = 'scale(1)';
+        }, 300);
+      }
+      
+      typeChar();
+    }
+
+    // 创建资源卡片
+    function createResourceCard(card, container) {
+      const cardElement = document.createElement('div');
+      cardElement.className = 'resource-card';
+      cardElement.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+      cardElement.style.borderRadius = '16px';
+      cardElement.style.padding = '12px';
+      cardElement.style.marginBottom = '12px';
+      cardElement.style.boxShadow = '0 2px 15px rgba(195, 225, 149, 0.25)';
+      
+      // 卡片标题
+      const cardTitle = document.createElement('div');
+      cardTitle.style.fontSize = '15px';
+      cardTitle.style.fontWeight = 'bold';
+      cardTitle.style.marginBottom = '8px';
+      cardTitle.style.color = '#3a3a3a';
+      cardTitle.textContent = card.title;
+      cardElement.appendChild(cardTitle);
+      
+      // 卡片类型标签
+      const cardType = document.createElement('div');
+      cardType.style.fontSize = '12px';
+      cardType.style.backgroundColor = 'rgba(81, 174, 103, 0.2)';
+      cardType.style.color = '#3a7a47';
+      cardType.style.padding = '3px 10px';
+      cardType.style.borderRadius = '10px';
+      cardType.style.display = 'inline-block';
+      cardType.style.marginBottom = '8px';
+      cardType.textContent = card.type;
+      cardElement.appendChild(cardType);
+      
+      // 卡片内容（视频或题目列表）
+      if (card.items && card.items.length > 0) {
+        const itemsList = document.createElement('ul');
+        itemsList.style.listStyleType = 'none';
+        itemsList.style.padding = '0';
+        itemsList.style.margin = '0';
+        
+        card.items.forEach(item => {
+          const listItem = document.createElement('li');
+          listItem.style.fontSize = '13px';
+          listItem.style.marginBottom = '4px';
+          listItem.style.color = '#585858';
+          listItem.style.display = 'flex';
+          listItem.style.alignItems = 'center';
+          
+          const bullet = document.createElement('span');
+          bullet.textContent = '•';
+          bullet.style.marginRight = '5px';
+          bullet.style.color = '#51ae67';
+          bullet.style.fontWeight = 'bold';
+          
+          listItem.appendChild(bullet);
+          listItem.appendChild(document.createTextNode(item));
+          itemsList.appendChild(listItem);
+        });
+        
+        cardElement.appendChild(itemsList);
+      } else if (card.count) {
+        const countInfo = document.createElement('div');
+        countInfo.style.fontSize = '13px';
+        countInfo.style.color = '#585858';
+        countInfo.textContent = card.count;
+        cardElement.appendChild(countInfo);
+      }
+      
+      container.appendChild(cardElement);
+      return cardElement;
+    }
+
+    // 创建计划卡片
+    function createPlanCard(planData, callback) {
+      const planCard = document.createElement('div');
+      planCard.className = 'plan-card';
+      planCard.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+      planCard.style.borderRadius = '16px';
+      planCard.style.padding = '16px';
+      planCard.style.boxShadow = '0 2px 15px rgba(195, 225, 149, 0.25)';
+      planCard.style.width = '346px';
+      
+      // 计划标题
+      const title = document.createElement('h3');
+      title.style.fontSize = '16px';
+      title.style.marginBottom = '8px';
+      title.style.color = '#3a3a3a';
+      title.textContent = planData.title;
+      planCard.appendChild(title);
+      
+      // 计划描述
+      const description = document.createElement('p');
+      description.style.fontSize = '14px';
+      description.style.marginBottom = '16px';
+      description.style.color = '#585858';
+      description.textContent = planData.description;
+      planCard.appendChild(description);
+      
+      // 按钮容器
+      const buttonContainer = document.createElement('div');
+      buttonContainer.style.display = 'flex';
+      buttonContainer.style.justifyContent = 'space-between';
+      
+      // 预览按钮
+      const previewButton = document.createElement('button');
+      previewButton.textContent = planData.buttons[0];
+      previewButton.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+      previewButton.style.border = '1px solid rgba(81, 174, 103, 0.7)';
+      previewButton.style.color = 'rgba(81, 174, 103, 1)';
+      previewButton.style.padding = '8px 16px';
+      previewButton.style.borderRadius = '10px';
+      previewButton.style.cursor = 'pointer';
+      previewButton.style.fontSize = '14px';
+      previewButton.style.width = '48%';
+      
+      // 添加计划按钮
+      const addButton = document.createElement('button');
+      addButton.textContent = planData.buttons[1];
+      addButton.style.backgroundColor = 'rgba(81, 174, 103, 1)';
+      addButton.style.border = 'none';
+      addButton.style.color = 'white';
+      addButton.style.padding = '8px 16px';
+      addButton.style.borderRadius = '10px';
+      addButton.style.cursor = 'pointer';
+      addButton.style.fontSize = '14px';
+      addButton.style.width = '48%';
+      
+      addButton.onclick = () => {
+        // 创建计划添加确认弹窗
+        showConfirmation(planData.confirmation, callback);
+        planCard.style.opacity = '0';
+        setTimeout(() => {
+          planCard.remove();
+        }, 500);
+      };
+      
+      previewButton.onclick = () => {
+        // 预览动画效果
+        previewButton.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          previewButton.style.transform = 'scale(1)';
+        }, 200);
+      };
+      
+      buttonContainer.appendChild(previewButton);
+      buttonContainer.appendChild(addButton);
+      planCard.appendChild(buttonContainer);
+      
+      return planCard;
+    }
+
+    // 显示确认弹窗
+    function showConfirmation(confirmationData, callback) {
+      const confirmation = document.createElement('div');
+      confirmation.className = 'confirmation-popup';
+      confirmation.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+      confirmation.style.borderRadius = '16px';
+      confirmation.style.padding = '16px';
+      confirmation.style.boxShadow = '0 2px 15px rgba(195, 225, 149, 0.4)';
+      confirmation.style.width = '300px';
+      confirmation.style.position = 'absolute';
+      confirmation.style.left = '50%';
+      confirmation.style.top = '50%';
+      confirmation.style.transform = 'translate(-50%, -50%)';
+      confirmation.style.textAlign = 'center';
+      confirmation.style.zIndex = '20';
+      
+      // 确认信息
+      const message = document.createElement('p');
+      message.style.fontSize = '16px';
+      message.style.marginBottom = '16px';
+      message.style.color = '#3a3a3a';
+      message.textContent = confirmationData.message;
+      confirmation.appendChild(message);
+      
+      // 开始学习按钮
+      const startButton = document.createElement('button');
+      startButton.textContent = confirmationData.button;
+      startButton.style.backgroundColor = 'rgba(81, 174, 103, 1)';
+      startButton.style.border = 'none';
+      startButton.style.color = 'white';
+      startButton.style.padding = '10px 20px';
+      startButton.style.borderRadius = '10px';
+      startButton.style.cursor = 'pointer';
+      startButton.style.fontSize = '14px';
+      startButton.style.width = '80%';
+      
+      startButton.onclick = () => {
+        confirmation.style.opacity = '0';
+        setTimeout(() => {
+          confirmation.remove();
+          if (callback) callback();
+        }, 500);
+      };
+      
+      confirmation.appendChild(startButton);
+      document.body.appendChild(confirmation);
+      
+      // 添加淡入效果
+      confirmation.style.opacity = '0';
+      setTimeout(() => {
+        confirmation.style.opacity = '1';
+        confirmation.style.transition = 'opacity 0.3s ease';
+      }, 10);
+      
+      return confirmation;
+    }
+
+    // 创建表单
+    function createForm(formData, callback) {
+      const formContainer = document.createElement('div');
+      formContainer.className = 'form-container';
+      formContainer.style.position = 'absolute';
+      formContainer.style.left = '15px';
+      formContainer.style.width = '346px';
+      formContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.6)';
+      formContainer.style.borderRadius = '20px';
+      formContainer.style.padding = '16px';
+      formContainer.style.boxShadow = '0 0 25px rgba(195, 225, 149, 0.35)';
+      formContainer.style.zIndex = '7';
+      
+      // 添加标题
+      if (formData.title) {
+        const title = document.createElement('h3');
+        title.style.fontSize = '16px';
+        title.style.marginBottom = '12px';
+        title.style.fontWeight = 'bold';
+        title.style.color = '#3a3a3a';
+        title.textContent = formData.title;
+        formContainer.appendChild(title);
+      }
+      
+      // 添加表单字段
+      formData.fields.forEach(field => {
+        const fieldContainer = document.createElement('div');
+        fieldContainer.style.marginBottom = '16px';
+        
+        const label = document.createElement('div');
+        label.style.fontSize = '14px';
+        label.style.marginBottom = '8px';
+        label.style.color = '#585858';
+        label.textContent = field.label;
+        fieldContainer.appendChild(label);
+        
+        if (field.type === 'checkbox') {
+          field.options.forEach(option => {
+            const optionContainer = document.createElement('div');
+            optionContainer.style.marginBottom = '8px';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = option.replace(/\s+/g, '');
+            checkbox.value = option;
+            checkbox.style.marginRight = '8px';
+            
+            const optionLabel = document.createElement('label');
+            optionLabel.htmlFor = checkbox.id;
+            optionLabel.textContent = option;
+            optionLabel.style.fontSize = '14px';
+            
+            optionContainer.appendChild(checkbox);
+            optionContainer.appendChild(optionLabel);
+            fieldContainer.appendChild(optionContainer);
+          });
+        } else if (field.type === 'radio') {
+          field.options.forEach(option => {
+            const optionContainer = document.createElement('div');
+            optionContainer.style.marginBottom = '8px';
+            
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = field.label.replace(/\s+/g, '');
+            radio.id = option.replace(/\s+/g, '');
+            radio.value = option;
+            radio.style.marginRight = '8px';
+            
+            const optionLabel = document.createElement('label');
+            optionLabel.htmlFor = radio.id;
+            optionLabel.textContent = option;
+            optionLabel.style.fontSize = '14px';
+            
+            optionContainer.appendChild(radio);
+            optionContainer.appendChild(optionLabel);
+            fieldContainer.appendChild(optionContainer);
+          });
+        }
+        
+        formContainer.appendChild(fieldContainer);
+      });
+      
+      // 添加提交按钮
+      const submitButton = document.createElement('button');
+      submitButton.textContent = formData.submitButton || '提交';
+      submitButton.style.backgroundColor = 'rgba(81, 174, 103, 1)';
+      submitButton.style.color = 'white';
+      submitButton.style.border = 'none';
+      submitButton.style.padding = '10px 20px';
+      submitButton.style.borderRadius = '10px';
+      submitButton.style.cursor = 'pointer';
+      submitButton.style.fontSize = '14px';
+      submitButton.style.width = '100%';
+      
+      submitButton.onclick = () => {
+        formContainer.style.opacity = '0';
+        setTimeout(() => {
+          formContainer.remove();
+          if (callback) callback();
+        }, 500);
+      };
+      
+      formContainer.appendChild(submitButton);
+      messageContainer.appendChild(formContainer);
+      
+      return formContainer;
+    }
+
+    // 显示额外文本行
+    function showExtraLines(dialogueIndex, thinking, callback) {
+      const findIcon = document.getElementById('find-icon');
+      const extraLine1 = document.getElementById('extra-line1');
+      const extraLine2 = document.getElementById('extra-line2');
+      
+      // 设置查找图标位置
+      findIcon.style.left = '23.2px';
+      findIcon.style.top = '202px';
+      findIcon.classList.add('visible');
+      
+      // 设置第一行额外文本
+      extraLine1.style.left = '45px';
+      extraLine1.style.top = '192px';
+      extraLine1.style.whiteSpace = 'nowrap';
+      extraLine1.classList.add('visible');
+      
+      // 确保只有一行文本时正常显示
+      if (thinking.extraLines.length === 1) {
+        typeText(extraLine1, thinking.extraLines[0], callback, 40);
+        return;
+      }
+      
+      typeText(extraLine1, thinking.extraLines[0], null, 40);
+      
+      // 第一行显示后等待一段时间再显示第二行
+      setTimeout(() => {
+        // 设置第二行额外文本，确保有足够的垂直间距
+        extraLine2.style.left = '45px';
+        extraLine2.style.top = '234px'; // 增加与第一行的垂直距离
+        extraLine2.style.whiteSpace = 'normal'; // 允许文本换行
+        extraLine2.style.maxWidth = '275px';
+        extraLine2.style.width = 'auto';
+        extraLine2.style.right = '30px';
+        extraLine2.style.whiteSpace = 'nowrap';
+        extraLine2.classList.add('visible');
+        
+        typeText(extraLine2, thinking.extraLines[1], null, 40);
+        
+        // 显示完毕后等待一段时间再收起灵动岛
+        setTimeout(() => {
+          if (callback) callback();
+        }, 2000);
+      }, 800);
+    }
+
+    // 计时器
+    function startTimer() {
+      let seconds = 1;
+      const thinkingText = document.getElementById('thinking-text');
+      
+      const oldTimerSpan = document.getElementById('timer-span');
+      if (oldTimerSpan) oldTimerSpan.remove();
+      
+      const timerSpan = document.createElement('span');
+      timerSpan.style.marginLeft = '6px';
+      timerSpan.id = 'timer-span';
+      thinkingText.appendChild(timerSpan);
+
+      if (timerInterval) clearInterval(timerInterval);
+
+      function updateTimer() {
+        const min = Math.floor(seconds / 60);
+        const sec = seconds % 60;
+        timerSpan.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+        seconds++;
+      }
+
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    // 添加滚动到底部函数
+    function scrollToBottom() {
+      setTimeout(() => {
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+      }, 100);
+    }
+
+    init();
+  </script>
+</body>
+</html>
