@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电学感应演示</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .page {
+            width: 375px;
+            height: 812px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            border-radius: 33px;
+            overflow: hidden;
+            background-color: #F3F3F3;
+        }
+        
+        .page.hidden {
+            transform: translate(-50%, -50%) translateX(100%);
+            opacity: 0;
+        }
+        
+        .page.active {
+            transform: translate(-50%, -50%);
+            opacity: 1;
+            z-index: 10;
+        }
+        
+        .plan-page, .video-page, .list-page {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        .click-animation {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(81, 174, 103, 0.5);
+            transform: translate(-50%, -50%);
+            animation: clickEffect 0.6s ease-out forwards;
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        @keyframes clickEffect {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.3);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.5);
+            }
+        }
+        
+        .highlight-card {
+            position: absolute;
+            border: 3px solid #51AE67;
+            border-radius: 20px;
+            box-shadow: 0 0 10px rgba(81, 174, 103, 0.5);
+            animation: pulse 1s infinite;
+            pointer-events: none;
+            z-index: 20;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 10px rgba(81, 174, 103, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(81, 174, 103, 0.8); }
+            100% { box-shadow: 0 0 10px rgba(81, 174, 103, 0.5); }
+        }
+        
+        .btn-wrapper {
+            position: absolute;
+            cursor: pointer;
+            z-index: 15;
+        }
+        
+        .video-cover {
+            position: absolute;
+            top: 220px;
+            left: 0;
+            width: 375px;
+            height: 186px;
+            object-fit: cover;
+        }
+        
+        .question-image {
+            width: 322px;
+            height: auto;
+            border-radius: 8px;
+            margin: 0 auto;
+        }
+        
+        .question-container {
+            position: absolute;
+            top: 151px;
+            left: 26px;
+            width: 322px;
+            height: 155px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .question-container img {
+            margin-bottom: 15px;
+        }
+        
+        .question-container-2 {
+            position: absolute;
+            top: 516px;
+            left: 26px;
+            width: 322px;
+            height: 155px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* 添加顶部状态栏样式 */
+        .status-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 375px;
+            height: 44px;
+            z-index: 50;
+        }
+        
+        /* 添加底部导航栏样式 */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 375px;
+            height: 88px;
+            z-index: 50;
+            pointer-events: none; /* 避免干扰其他交互 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 计划页 -->
+        <div id="planPage" class="page active">
+            <div class="plan-page">
+                <!-- 统一的顶部状态栏 -->
+                <svg class="status-bar" width="375" height="44" viewBox="0 0 375 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M304 20H305C305.552 20 306 20.4477 306 21V27C306 27.5523 305.552 28 305 28H304C303.448 28 303 27.5523 303 27V21C303 20.4477 303.448 20 304 20Z" fill="#333333"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M299.5 22H300.5C301.052 22 301.5 22.4477 301.5 23V27C301.5 27.5523 301.052 28 300.5 28H299.5C298.948 28 298.5 27.5523 298.5 27V23C298.5 22.4477 298.948 22 299.5 22Z" fill="#333333"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M295 23.5H296C296.552 23.5 297 23.9477 297 24.5V27C297 27.5523 296.552 28 296 28H295C294.448 28 294 27.5523 294 27V24.5C294 23.9477 294.448 23.5 295 23.5Z" fill="#333333"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M308.5 18H309.5C310.052 18 310.5 18.4477 310.5 19V27C310.5 27.5523 310.052 28 309.5 28H308.5C307.948 28 307.5 27.5523 307.5 27V19C307.5 18.4477 307.948 18 308.5 18Z" fill="#333333" fill-opacity="0.2"/>
+                <path d="M324.132 24.9395C324.771 24.9395 325.393 25.1075 325.94 25.4279L326.162 25.5577C326.33 25.6562 326.36 25.8865 326.222 26.024L324.328 27.9129C324.212 28.0289 324.023 28.0289 323.907 27.9129L322.025 26.0362C321.887 25.8993 321.916 25.6701 322.083 25.5709L322.302 25.4405C322.855 25.112 323.484 24.9395 324.132 24.9395Z" fill="#333333"/>
+                <path d="M324.133 21.4707C325.724 21.4707 327.251 21.9984 328.495 22.9758L328.671 23.1139C328.811 23.224 328.824 23.4315 328.697 23.5573L327.567 24.685C327.462 24.7893 327.297 24.8013 327.178 24.7131L327.04 24.6107C326.2 23.9861 325.186 23.6511 324.133 23.6511C323.073 23.6511 322.053 23.9903 321.21 24.622L321.072 24.7254C320.953 24.8142 320.787 24.8025 320.682 24.6979L319.552 23.5707C319.426 23.4451 319.438 23.2382 319.578 23.1279L319.753 22.9896C321 22.0036 322.534 21.4707 324.133 21.4707Z" fill="#333333"/>
+                <path d="M324.133 18C326.657 18 329.072 18.8906 330.983 20.5229L331.146 20.6623C331.278 20.7749 331.285 20.9756 331.163 21.098L330.036 22.2219C329.926 22.3308 329.752 22.3385 329.634 22.2395L329.494 22.1228C327.989 20.8647 326.104 20.1804 324.133 20.1804C322.155 20.1804 320.263 20.8694 318.756 22.1354L318.617 22.2527C318.498 22.3521 318.324 22.3447 318.214 22.2356L317.087 21.1118C316.965 20.9895 316.972 20.7892 317.104 20.6765L317.266 20.5371C319.18 18.8959 321.601 18 324.133 18Z" fill="#333333"/>
+                <path d="M360 21V21C360.552 21 361 21.4477 361 22V24C361 24.5523 360.552 25 360 25V25V21Z" fill="#333333" fill-opacity="0.6"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M339 17H356C357.657 17 359 18.3431 359 20V26C359 27.6569 357.657 29 356 29H339C337.343 29 336 27.6569 336 26V20C336 18.3431 337.343 17 339 17ZM339 18C337.895 18 337 18.8954 337 20V26C337 27.1046 337.895 28 339 28H356C357.105 28 358 27.1046 358 26V20C358 18.8954 357.105 18 356 18H339Z" fill="#333333" fill-opacity="0.6"/>
+                <rect x="338" y="19" width="19" height="8" rx="1" fill="#333333"/>
+                <path d="M37.8672 28.0889C40.5552 28.0889 42.1519 25.9868 42.1519 22.4272C42.1519 21.0869 41.8955 19.959 41.4048 19.0874C40.6943 17.7324 39.4712 17 37.9258 17C35.626 17 34 18.5454 34 20.7134C34 22.7495 35.4648 24.229 37.479 24.229C38.7168 24.229 39.7202 23.6504 40.2183 22.647H40.2402C40.2402 22.647 40.2695 22.647 40.2769 22.647C40.2915 22.647 40.3428 22.647 40.3428 22.647C40.3428 25.064 39.4272 26.5068 37.8818 26.5068C36.9736 26.5068 36.2705 26.0088 36.0288 25.2104H34.1465C34.4614 26.9463 35.9336 28.0889 37.8672 28.0889ZM37.9331 22.7275C36.7173 22.7275 35.853 21.8633 35.853 20.6548C35.853 19.4756 36.7612 18.5747 37.9404 18.5747C39.1196 18.5747 40.0278 19.4902 40.0278 20.6841C40.0278 21.8633 39.1416 22.7275 37.9331 22.7275Z" fill="#333333"/>
+                <path d="M45.243 27.9863C45.9388 27.9863 46.4148 27.4883 46.4148 26.8291C46.4148 26.1626 45.9388 25.6719 45.243 25.6719C44.5545 25.6719 44.0711 26.1626 44.0711 26.8291C44.0711 27.4883 44.5545 27.9863 45.243 27.9863ZM45.243 22.4932C45.9388 22.4932 46.4148 22.0024 46.4148 21.3433C46.4148 20.6768 45.9388 20.186 45.243 20.186C44.5545 20.186 44.0711 20.6768 44.0711 21.3433C44.0711 22.0024 44.5545 22.4932 45.243 22.4932Z" fill="#333333"/>
+                <path d="M53.2706 27.8325H55.0797V25.8623H56.5079V24.2656H55.0797V17.2637H52.4137C50.546 20.0762 49.0592 22.4272 48.107 24.1777V25.8623H53.2706V27.8325ZM49.8575 24.1997C51.088 22.0317 52.1866 20.2959 53.1974 18.8018H53.2999V24.3096H49.8575V24.1997Z" fill="#333333"/>
+                <path d="M60.5365 27.8325H62.4262V17.2637H60.5438L57.7826 19.1973V21.0137L60.412 19.168H60.5365V27.8325Z" fill="#333333"/>
+                </svg>
+                
+                <!-- 完整的计划页SVG -->
+                <svg width="375" height="812" viewBox="0 0 375 812" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <g clip-path="url(#clip0_3251_13644)">
+                <rect width="375" height="812" rx="33" fill="#F3F3F3"/>
+                <rect width="375" height="812" fill-opacity="0.2"/>
+                <rect width="375" height="812" fill="url(#paint0_linear_3251_13644)"/>
+                <rect x="121" y="798" width="134" height="5" rx="2.5" fill="black"/>
+                <g filter="url(#filter0_d_3251_13644)">
+                <rect x="16" y="380" width="343" height="78" rx="20" fill="white" fill-opacity="0.4" shape-rendering="crispEdges"/>
+                </g>
+                <g filter="url(#filter1_d_3251_13644)">
+                <rect x="16" y="468" width="343" height="78" rx="20" fill="white" fill-opacity="0.4" shape-rendering="crispEdges"/>
+                </g>
+                <g filter="url(#filter2_d_3251_13644)">
+                <rect x="16" y="556" width="343" height="78" rx="20" fill="white" fill-opacity="0.4" shape-rendering="crispEdges"/>
+                </g>
+                <g filter="url(#filter3_d_3251_13644)">
+                <rect x="16" y="106" width="343" height="128" rx="20" fill="white" fill-opacity="0.4" shape-rendering="crispEdges"/>
+                </g>
+                
+                <!-- 移除原有的顶部状态栏，因为上面已经添加了统一的状态栏 -->
+                
+                <text fill="#333333" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="20" font-weight="600" letter-spacing="0em"><tspan x="24" y="89.2">学习计划</tspan></text>
+                <text fill="#333333" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="20" font-weight="600" letter-spacing="0em"><tspan x="24" y="363.2">今日任务</tspan></text>
+                <text fill="#333333" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="16" font-weight="500" letter-spacing="0em"><tspan x="78.4062" y="140.76">40天电磁专题突破</tspan></text>
+                <text fill="#333333" fill-opacity="0.5" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" letter-spacing="0em"><tspan x="79.498" y="160.82">第1模块/共4模块  预计</tspan></text>
+                <text fill="#F98812" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" font-weight="600" letter-spacing="0em"><tspan x="204.305" y="160.82">40</tspan></text>
+                <text fill="#333333" fill-opacity="0.5" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" letter-spacing="0em"><tspan x="220" y="160.82">天之后完成</tspan></text>
+                <mask id="path-30-inside-1_3251_13644" fill="white">
+                <path></path>
+                </mask>
+                <path fill="#54CB15" fill-opacity="0.2" stroke="#54CB15" stroke-opacity="0.2" stroke-width="12" mask="url(#path-30-inside-1_3251_13644)"></path>
+                <mask id="path-31-inside-2_3251_13644" fill="white">
+                <path></path>
+                </mask>
+                <path fill="#54CB15" stroke="#54CB15" stroke-width="12" mask="url(#path-31-inside-2_3251_13644)"></path>
+                <text fill="#54CB15" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="8" font-weight="600" letter-spacing="0em"><tspan x="46.6739" y="148.587">2%</tspan></text>
+                <rect x="34" y="183" width="307" height="6" rx="3" fill="#54CA15" fill-opacity="0.2"/>
+                <rect x="34" y="183" width="46" height="6" rx="3" fill="#54CA15"/>
+                <text fill="#47AB12" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" font-weight="500" letter-spacing="0em"><tspan x="34" y="209.82">电磁感应</tspan></text>
+                <text fill="#BDBEBA" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" font-weight="500" letter-spacing="0em"><tspan x="189" y="209.82">电场</tspan></text>
+                <text fill="#333333" fill-opacity="0.3" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" letter-spacing="0em"><tspan x="304" y="209.82">综合</tspan></text>
+                <g filter="url(#filter4_d_3251_13644)">
+                <rect x="16" y="244" width="343" height="78" rx="20" fill="white" fill-opacity="0.4" shape-rendering="crispEdges"/>
+                </g>
+                <circle cx="59" cy="283" r="25" fill="#54CB15"/>
+                <circle cx="124" cy="283" r="25" fill="#54CB15" fill-opacity="0.2"/>
+                <circle cx="188" cy="283" r="25" fill="#54CB15" fill-opacity="0.2"/>
+                <circle cx="252" cy="283" r="25" fill="#54CB15" fill-opacity="0.2"/>
+                <circle cx="316" cy="283" r="25" fill="#54CB15" fill-opacity="0.2"/>
+                <text fill="white" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="14" font-weight="500" letter-spacing="0em"><tspan x="45" y="281.04">周一</tspan></text>
+                <text fill="white" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" font-weight="500" letter-spacing="0em"><tspan x="52.4531" y="296.82">15</tspan></text>
+                <text fill="#333333" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="16" font-weight="500" letter-spacing="0em"><tspan x="88" y="414.76">[B站]黄夫人电学感应基础</tspan></text>
+                <text fill="#868686" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" letter-spacing="0em"><tspan x="88.3984" y="433.82">1节· 预计30分钟</tspan></text>
+                <text fill="#333333" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="16" font-weight="500" letter-spacing="0em"><tspan x="88" y="502.76">学霸笔记</tspan></text>
+                <text fill="#868686" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" letter-spacing="0em"><tspan x="88.3984" y="524.82">2页· 预计10分钟</tspan></text>
+                <text fill="#585858" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="16" font-weight="500" letter-spacing="0em"><tspan x="88" y="590.76">电磁感应精选题</tspan></text>
+                <text fill="#868686" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" letter-spacing="0em"><tspan x="88.2109" y="611.82">3道 · 预计20分钟</tspan></text>
+                <circle cx="57" cy="595" r="23" fill="white"/>
+                <rect x="48.25" y="586.25" width="16.5" height="5.5" rx="2.75" stroke="#2A95E7" stroke-width="2.5"/>
+                <rect x="48.1016" y="596.301" width="8" height="2.5" rx="1.25" fill="#2A95E7"/>
+                <rect x="62.6133" y="595.801" width="8.75" height="2.1875" rx="1.09375" transform="rotate(90 62.6133 595.801)" fill="#2A95E7"/>
+                <rect x="65.8945" y="601.27" width="8.75" height="2.1875" rx="1.09375" transform="rotate(-180 65.8945 601.27)" fill="#2A95E7"/>
+                <rect x="48.1016" y="602.301" width="8" height="2" rx="1" fill="#2A95E7"/>
+                <circle cx="57" cy="419" r="23" fill="white"/>
+                <path d="M63.4536 416.071C65.2944 417.116 65.3132 419.763 63.4874 420.834L55.4122 425.573C53.5864 426.645 51.2854 425.338 51.2704 423.221L51.2038 413.858C51.1887 411.741 53.4709 410.402 55.3118 411.447L63.4536 416.071Z" stroke="#DC74E9" stroke-width="2.5"/>
+                <text fill="white" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="14" font-weight="500" letter-spacing="0em"><tspan x="109" y="282.04">周二</tspan></text>
+                <text fill="white" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="14" font-weight="500" letter-spacing="0em"><tspan x="173" y="282.04">周三</tspan></text>
+                <text fill="white" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="14" font-weight="500" letter-spacing="0em"><tspan x="237" y="282.04">周四</tspan></text>
+                <text fill="white" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="14" font-weight="500" letter-spacing="0em"><tspan x="301" y="282.04">周五</tspan></text>
+                <text fill="white" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" font-weight="500" letter-spacing="0em"><tspan x="116.453" y="297.82">16</tspan></text>
+                <text fill="white" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" font-weight="500" letter-spacing="0em"><tspan x="180.246" y="297.82">17</tspan></text>
+                <text fill="white" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" font-weight="500" letter-spacing="0em"><tspan x="244.453" y="297.82">18</tspan></text>
+                <text fill="white" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="12" font-weight="500" letter-spacing="0em"><tspan x="308.453" y="297.82">19</tspan></text>
+                <circle cx="328" cy="507" r="13" fill="#54CA15" fill-opacity="0.2"/>
+                <rect x="322.492" y="507.637" width="2" height="5.56187" rx="1" transform="rotate(-45 322.492 507.637)" fill="white"/>
+                <rect x="332.309" y="503.484" width="2" height="9.87674" rx="1" transform="rotate(45 332.309 503.484)" fill="white"/>
+                <circle cx="328" cy="419" r="13" fill="#54CA15" fill-opacity="0.2"/>
+                <rect x="322.492" y="419.637" width="2" height="5.56187" rx="1" transform="rotate(-45 322.492 419.637)" fill="white"/>
+                <rect x="332.309" y="415.484" width="2" height="9.87674" rx="1" transform="rotate(45 332.309 415.484)" fill="white"/>
+                <circle cx="328" cy="595" r="13" fill="#54CA15" fill-opacity="0.2"/>
+                <rect x="322.492" y="595.637" width="2" height="5.56187" rx="1" transform="rotate(-45 322.492 595.637)" fill="white"/>
+                <rect x="332.309" y="591.484" width="2" height="9.87674" rx="1" transform="rotate(45 332.309 591.484)" fill="white"/>
+                <path></path>
+                <circle cx="57" cy="507" r="23" fill="white"/>
+                <rect x="49.6484" y="498.25" width="15.5" height="17.5" rx="2.75" stroke="#F37B30" stroke-width="2.5"/>
+                <rect x="55.1992" y="502.5" width="7" height="1" rx="0.5" fill="#DD862A" stroke="#F37B30"/>
+                <rect x="58.1992" y="506.197" width="4" height="1" rx="0.5" fill="#DD862A" stroke="#F37B30"/>
+                <mask id="path-82-inside-3_3251_13644" fill="white">
+                <path fill-rule="evenodd" clip-rule="evenodd"></path>
+                </mask>
+                <path mask="url(#path-82-inside-3_3251_13644)"></path>
+                <circle cx="298" cy="751.426" r="1.5" fill="#D9D9D9"/>
+                <circle cx="304.898" cy="751.426" r="1.5" fill="#D9D9D9"/>
+                <path></path>
+                <rect x="63.4062" y="749.184" width="13.7982" height="2.46397" rx="1.23198" fill="white"/>
+                <rect x="63.4062" y="755.592" width="9.85586" height="2.46397" rx="1.23198" fill="white"/>
+                <path fill="white" stroke="#D9D9D9" stroke-width="1.5"></path>
+                <path fill="white" stroke="#D9D9D9" stroke-width="1.5"></path>
+                <circle cx="185.301" cy="759.795" r="20.5" fill="white"/>
+                <ellipse cx="195.801" cy="763.795" rx="18" ry="11.5" fill="white"/>
+                <ellipse cx="192.301" cy="768.203" rx="13.5" ry="12" fill="white"/>
+                <path stroke="#D9D9D9" stroke-width="2" stroke-linecap="round"></path>
+                <path stroke="#D9D9D9" stroke-width="2" stroke-linecap="round"></path>
+                <circle cx="191.301" cy="755.988" r="1" fill="#D9D9D9"/>
+                <path fill="white" stroke="#D9D9D9" stroke-width="1.5"></path>
+                <circle cx="199.5" cy="754.195" r="1" fill="#D9D9D9"/>
+                <path fill="white" stroke="#D9D9D9" stroke-width="1.5"></path>
+                </g>
+                <defs>
+                <linearGradient id="paint0_linear_3251_13644" x1="187.5" y1="0" x2="187.5" y2="812" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#F2FFDA" stop-opacity="0"/>
+                <stop offset="1" stop-color="#F2FFDA"/>
+                </linearGradient>
+                <clipPath id="clip0_3251_13644">
+                <rect width="375" height="812" rx="33" fill="white"/>
+                </clipPath>
+                </defs>
+                </svg>
+                
+                <!-- 点击区域覆盖 -->
+                <div class="btn-wrapper btn-video-card" style="top: 380px; left: 16px; width: 343px; height: 78px; border-radius: 20px;"></div>
+                <div class="btn-wrapper btn-problem-card" style="top: 556px; left: 16px; width: 343px; height: 78px; border-radius: 20px;"></div>
+                
+                <!-- 添加底部导航栏 -->
+                <svg class="bottom-nav" width="375" height="88" viewBox="0 0 375 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 0H375V88H0V0Z" fill="white"/>
+                    <path d="M57 21.0195C57 18.2581 59.2386 16.0195 62 16.0195H74C80.6274 16.0195 86 21.3921 86 28.0195V42.2503C86 45.0117 83.7614 47.2503 81 47.2503H69C62.3726 47.2503 57 41.8777 57 35.2503V21.0195Z" fill="#51AE67"/>
+                    <rect x="63.4062" y="25.1836" width="13.7982" height="2.46397" rx="1.23198" fill="white"/>
+                    <rect x="63.4062" y="31.5918" width="9.85586" height="2.46397" rx="1.23198" fill="white"/>
+                    <path d="M183.113 4.4368C187.215 5.06235 187.081 13.3359 186.501 17.3945C186.501 17.3945 187.449 9.01669 185.86 9.01669C180.64 10.3565 179.01 3.81126 183.113 4.4368Z" fill="white" stroke="#D9D9D9" stroke-width="1.5"/>
+                    <path d="M192.556 8.12721C194.635 7.19958 194.089 3.97601 191.075 4.4399C188.061 4.90371 187.013 7.7407 186.839 9.05483C186.753 14.1954 186.839 18.0988 186.839 17.2875C186.839 10.0947 188.918 9.75055 192.556 8.12721Z" fill="white" stroke="#D9D9D9" stroke-width="1.5"/>
+                    <circle cx="185.301" cy="35.7949" r="20.5" fill="white"/>
+                    <ellipse cx="195.801" cy="39.7949" rx="18" ry="11.5" fill="white"/>
+                    <ellipse cx="192.301" cy="44.2031" rx="13.5" ry="12" fill="white"/>
+                    <path d="M181.801 32.7829C191.296 32.2499 191.803 45.6205 183.678 49.2031M204.323 30.2174C213.818 29.6844 215.872 44.2271 207.746 47.8097" stroke="#D9D9D9" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M169.379 49.3027C166.987 45.7846 164.801 41.4822 164.801 36.8361C164.801 24.9435 174.019 15.3027 185.389 15.3027C194.081 15.3027 200.781 20.9363 203.801 28.9027" stroke="#D9D9D9" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="191.301" cy="31.9883" r="1" fill="#D9D9D9"/>
+                    <path d="M201.764 46.1624C200.791 47.5492 194.257 46.2933 191.112 45.4919C188.922 44.6022 189.862 42.1875 191.089 42.0408C194.184 41.6712 197.339 41.8002 199.825 42.0666C201.884 42.2871 202.955 44.4677 201.764 46.1624Z" fill="white" stroke="#D9D9D9" stroke-width="1.5"/>
+                    <circle cx="199.5" cy="30.1953" r="1" fill="#D9D9D9"/>
+                    <path d="M204.1 34.8947C202.986 32.296 196.044 34.3775 191.987 36.0227C191.393 36.2635 190.797 36.5489 190.395 37.0482C188.676 39.1833 189.754 43.1422 191.1 43.3945C193.946 43.9282 196.832 43.8883 199.379 43.5915C203.575 43.1025 205.764 38.7777 204.1 34.8947Z" fill="white" stroke="#D9D9D9" stroke-width="1.5"/>
+                    <rect x="121" y="74" width="134" height="5" rx="2.5" fill="black"/>
+                    <mask id="path-17-inside-1_3255_7425" fill="white">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M310.492 38.5697C313.259 36.0975 315 32.5021 315 28.5C315 21.0442 308.956 15 301.5 15C294.044 15 288 21.0442 288 28.5C288 32.5021 289.741 36.0975 292.508 38.5697C288.828 42.5822 293.505 47.5996 299 47.5996H302.927H304C309.495 47.5996 314.172 42.5822 310.492 38.5697Z"/>
+                    </mask>
+                    <path d="M310.492 38.5697L308.826 36.7055L306.938 38.393L308.65 40.2595L310.492 38.5697ZM292.508 38.5697L294.35 40.2595L296.062 38.393L294.174 36.7055L292.508 38.5697ZM312.5 28.5C312.5 31.7607 311.084 34.6876 308.826 36.7055L312.158 40.4338C315.433 37.5074 317.5 33.2435 317.5 28.5H312.5ZM301.5 17.5C307.575 17.5 312.5 22.4249 312.5 28.5H317.5C317.5 19.6634 310.337 12.5 301.5 12.5V17.5ZM290.5 28.5C290.5 22.4249 295.425 17.5 301.5 17.5V12.5C292.663 12.5 285.5 19.6634 285.5 28.5H290.5ZM294.174 36.7055C291.916 34.6876 290.5 31.7607 290.5 28.5H285.5C285.5 33.2435 287.567 37.5074 290.842 40.4338L294.174 36.7055ZM290.666 36.8798C289.371 38.2911 288.686 39.9503 288.697 41.6899C288.708 43.3931 289.385 44.9232 290.356 46.1453C292.265 48.5452 295.553 50.0996 299 50.0996V45.0996C296.952 45.0996 295.154 44.1453 294.27 43.0334C293.846 42.4996 293.699 42.023 293.697 41.6569C293.695 41.3272 293.805 40.8545 294.35 40.2595L290.666 36.8798ZM299 50.0996H302.927V45.0996H299V50.0996ZM302.927 50.0996H304V45.0996H302.927V50.0996ZM304 50.0996C307.447 50.0996 310.735 48.5452 312.644 46.1453C313.615 44.9232 314.292 43.3931 314.303 41.6899C314.314 39.9503 313.629 38.2911 312.334 36.8798L308.65 40.2595C309.195 40.8545 309.305 41.3272 309.303 41.6569C309.301 42.023 309.154 42.4996 308.73 43.0334C307.846 44.1453 306.048 45.0996 304 45.0996V50.0996Z" fill="#D9D9D9" mask="url(#path-17-inside-1_3255_7425)"/>
+                    <circle cx="298" cy="27.5" r="1.5" fill="#D9D9D9"/>
+                    <circle cx="304.898" cy="27.5" r="1.5" fill="#D9D9D9"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- 视频页 -->
+        <div id="videoPage" class="page hidden">
+            <div class="video-page">
+                <!-- 统一的顶部状态栏 -->
+                <svg class="status-bar" width="375" height="44" viewBox="0 0 375 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M304 20H305C305.552 20 306 20.4477 306 21V27C306 27.5523 305.552 28 305 28H304C303.448 28 303 27.5523 303 27V21C303 20.4477 303.448 20 304 20Z" fill="#333333"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M299.5 22H300.5C301.052 22 301.5 22.4477 301.5 23V27C301.5 27.5523 301.052 28 300.5 28H299.5C298.948 28 298.5 27.5523 298.5 27V23C298.5 22.4477 298.948 22 299.5 22Z" fill="#333333"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M295 23.5H296C296.552 23.5 297 23.9477 297 24.5V27C297 27.5523 296.552 28 296 28H295C294.448 28 294 27.5523 294 27V24.5C294 23.9477 294.448 23.5 295 23.5Z" fill="#333333"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M308.5 18H309.5C310.052 18 310.5 18.4477 310.5 19V27C310.5 27.5523 310.052 28 309.5 28H308.5C307.948 28 307.5 27.5523 307.5 27V19C307.5 18.4477 307.948 18 308.5 18Z" fill="#333333" fill-opacity="0.2"/>
+                <path d="M324.132 24.9395C324.771 24.9395 325.393 25.1075 325.94 25.4279L326.162 25.5577C326.33 25.6562 326.36 25.8865 326.222 26.024L324.328 27.9129C324.212 28.0289 324.023 28.0289 323.907 27.9129L322.025 26.0362C321.887 25.8993 321.916 25.6701 322.083 25.5709L322.302 25.4405C322.855 25.112 323.484 24.9395 324.132 24.9395Z" fill="#333333"/>
+                <path d="M324.133 21.4707C325.724 21.4707 327.251 21.9984 328.495 22.9758L328.671 23.1139C328.811 23.224 328.824 23.4315 328.697 23.5573L327.567 24.685C327.462 24.7893 327.297 24.8013 327.178 24.7131L327.04 24.6107C326.2 23.9861 325.186 23.6511 324.133 23.6511C323.073 23.6511 322.053 23.9903 321.21 24.622L321.072 24.7254C320.953 24.8142 320.787 24.8025 320.682 24.6979L319.552 23.5707C319.426 23.4451 319.438 23.2382 319.578 23.1279L319.753 22.9896C321 22.0036 322.534 21.4707 324.133 21.4707Z" fill="#333333"/>
+                <path d="M324.133 18C326.657 18 329.072 18.8906 330.983 20.5229L331.146 20.6623C331.278 20.7749 331.285 20.9756 331.163 21.098L330.036 22.2219C329.926 22.3308 329.752 22.3385 329.634 22.2395L329.494 22.1228C327.989 20.8647 326.104 20.1804 324.133 20.1804C322.155 20.1804 320.263 20.8694 318.756 22.1354L318.617 22.2527C318.498 22.3521 318.324 22.3447 318.214 22.2356L317.087 21.1118C316.965 20.9895 316.972 20.7892 317.104 20.6765L317.266 20.5371C319.18 18.8959 321.601 18 324.133 18Z" fill="#333333"/>
+                <path d="M360 21V21C360.552 21 361 21.4477 361 22V24C361 24.5523 360.552 25 360 25V25V21Z" fill="#333333" fill-opacity="0.6"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M339 17H356C357.657 17 359 18.3431 359 20V26C359 27.6569 357.657 29 356 29H339C337.343 29 336 27.6569 336 26V20C336 18.3431 337.343 17 339 17ZM339 18C337.895 18 337 18.8954 337 20V26C337 27.1046 337.895 28 339 28H356C357.105 28 358 27.1046 358 26V20C358 18.8954 357.105 18 356 18H339Z" fill="#333333" fill-opacity="0.6"/>
+                <rect x="338" y="19" width="19" height="8" rx="1" fill="#333333"/>
+                <path d="M37.8672 28.0889C40.5552 28.0889 42.1519 25.9868 42.1519 22.4272C42.1519 21.0869 41.8955 19.959 41.4048 19.0874C40.6943 17.7324 39.4712 17 37.9258 17C35.626 17 34 18.5454 34 20.7134C34 22.7495 35.4648 24.229 37.479 24.229C38.7168 24.229 39.7202 23.6504 40.2183 22.647H40.2402C40.2402 22.647 40.2695 22.647 40.2769 22.647C40.2915 22.647 40.3428 22.647 40.3428 22.647C40.3428 25.064 39.4272 26.5068 37.8818 26.5068C36.9736 26.5068 36.2705 26.0088 36.0288 25.2104H34.1465C34.4614 26.9463 35.9336 28.0889 37.8672 28.0889ZM37.9331 22.7275C36.7173 22.7275 35.853 21.8633 35.853 20.6548C35.853 19.4756 36.7612 18.5747 37.9404 18.5747C39.1196 18.5747 40.0278 19.4902 40.0278 20.6841C40.0278 21.8633 39.1416 22.7275 37.9331 22.7275Z" fill="#333333"/>
+                <path d="M45.243 27.9863C45.9388 27.9863 46.4148 27.4883 46.4148 26.8291C46.4148 26.1626 45.9388 25.6719 45.243 25.6719C44.5545 25.6719 44.0711 26.1626 44.0711 26.8291C44.0711 27.4883 44.5545 27.9863 45.243 27.9863ZM45.243 22.4932C45.9388 22.4932 46.4148 22.0024 46.4148 21.3433C46.4148 20.6768 45.9388 20.186 45.243 20.186C44.5545 20.186 44.0711 20.6768 44.0711 21.3433C44.0711 22.0024 44.5545 22.4932 45.243 22.4932Z" fill="#333333"/>
+                <path d="M53.2706 27.8325H55.0797V25.8623H56.5079V24.2656H55.0797V17.2637H52.4137C50.546 20.0762 49.0592 22.4272 48.107 24.1777V25.8623H53.2706V27.8325ZM49.8575 24.1997C51.088 22.0317 52.1866 20.2959 53.1974 18.8018H53.2999V24.3096H49.8575V24.1997Z" fill="#333333"/>
+                <path d="M60.5365 27.8325H62.4262V17.2637H60.5438L57.7826 19.1973V21.0137L60.412 19.168H60.5365V27.8325Z" fill="#333333"/>
+                </svg>
+                
+                <!-- 嵌入视频页SVG -->
+                <svg width="375" height="812" viewBox="0 0 375 812" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <g clip-path="url(#clip0_3252_13806)">
+                <rect width="375" height="812" rx="33" fill="#F3F3F3"/>
+                <rect width="375" height="812" fill-opacity="0.2"/>
+                <rect width="375" height="812" fill="url(#paint0_linear_3252_13806)"/>
+                <circle cx="434" cy="712" r="182" fill="url(#paint1_radial_3252_13806)" fill-opacity="0.4"/>
+                <circle cx="-28" cy="648" r="182" fill="url(#paint2_radial_3252_13806)" fill-opacity="0.4"/>
+                <circle cx="419" cy="134" r="182" fill="url(#paint3_radial_3252_13806)"/>
+                <circle cx="-43" cy="70" r="182" fill="url(#paint4_radial_3252_13806)"/>
+                
+                <!-- 移除原有的顶部状态栏，因为上面已经添加了统一的状态栏 -->
+                
+                <rect y="220" width="375" height="186" />
+                <text fill="#333333" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="16" font-weight="500" letter-spacing="0em"><tspan x="139" y="198.76">电学感应基础</tspan></text>
+                <rect x="14" y="648" width="166" height="50" rx="14" fill="white"/>
+                <text fill="#585858" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="16" letter-spacing="0em"><tspan x="65" y="678.76">等会再看</tspan></text>
+                <rect x="195" y="648" width="166" height="50" rx="14" fill="#51AE67"/>
+                <text fill="white" xml:space="preserve" style="white-space: pre" font-family="PingFang SC" font-size="16" letter-spacing="0em"><tspan x="246" y="678.76">我已完成</tspan></text>
+                
+                <!-- 添加底部导航栏 -->
+                <svg class="bottom-nav" width="375" height="88" viewBox="0 0 375 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 0H375V88H0V0Z" fill="white"/>
+                    <path d="M57 21.0195C57 18.2581 59.2386 16.0195 62 16.0195H74C80.6274 16.0195 86 21.3921 86 28.0195V42.2503C86 45.0117 83.7614 47.2503 81 47.2503H69C62.3726 47.2503 57 41.8777 57 35.2503V21.0195Z" fill="#51AE67"/>
+                    <rect x="63.4062" y="25.1836" width="13.7982" height="2.46397" rx="1.23198" fill="white"/>
+                    <rect x="63.4062" y="31.5918" width="9.85586" height="2.46397" rx="1.23198" fill="white"/>
+                    <path d="M183.113 4.4368C187.215 5.06235 187.081 13.3359 186.501 17.3945C186.501 17.3945 187.449 9.01669 185.86 9.01669C180.64 10.3565 179.01 3.81126 183.113 4.4368Z" fill="white" stroke="#D9D9D9" stroke-width="1.5"/>
+                    <path d="M192.556 8.12721C194.635 7.19958 194.089 3.97601 191.075 4.4399C188.061 4.90371 187.013 7.7407 186.839 9.05483C186.753 14.1954 186.839 18.0988 186.839 17.2875C186.839 10.0947 188.918 9.75055 192.556 8.12721Z" fill="white" stroke="#D9D9D9" stroke-width="1.5"/>
+                    <circle cx="185.301" cy="35.7949" r="20.5" fill="white"/>
+                    <ellipse cx="195.801" cy="39.7949" rx="18" ry="11.5" fill="white"/>
+                    <ellipse cx="192.301" cy="44.2031" rx="13.5" ry="12" fill="white"/>
+                    <path d="M181.801 32.7829C191.296 32.2499 191.803 45.6205 183.678 49.2031M204.323 30.2174C213.818 29.6844 215.872 44.2271 207.746 47.8097" stroke="#D9D9D9" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M169.379 49.3027C166.987 45.7846 164.801 41.4822 164.801 36.8361C164.801 24.9435 174.019 15.3027 185.389 15.3027C194.081 15.3027 200.781 20.9363 203.801 28.9027" stroke="#D9D9D9" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="191.301" cy="31.9883" r="1" fill="#D9D9D9"/>
+                    <path d="M201.764 46.1624C200.791 47.5492 194.257 46.2933 191.112 45.4919C188.922 44.6022 189.862 42.1875 191.089 42.0408C194.184 41.6712 197.339 41.8002 199.825 42.0666C201.884 42.2871 202.955 44.4677 201.764 46.1624Z" fill="white" stroke="#D9D9D9" stroke-width="1.5"/>
+                    <circle cx="199.5" cy="30.1953" r="1" fill="#D9D9D9"/>
+                    <path d="M204.1 34.8947C202.986 32.296 196.044 34.3775 191.987 36.0227C191.393 36.2635 190.797 36.5489 190.395 37.0482C188.676 39.1833 189.754 43.1422 191.1 43.3945C193.946 43.9282 196.832 43.8883 199.379 43.5915C203.575 43.1025 205.764 38.7777 204.1 34.8947Z" fill="white" stroke="#D9D9D9" stroke-width="1.5"/>
+                    <rect x="121" y="74" width="134" height="5" rx="2.5" fill="black"/>
+                    <mask id="path-17-inside-1_3255_7425" fill="white">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M310.492 38.5697C313.259 36.0975 315 32.5021 315 28.5C315 21.0442 308.956 15 301.5 15C294.044 15 288 21.0442 288 28.5C288 32.5021 289.741 36.0975 292.508 38.5697C288.828 42.5822 293.505 47.5996 299 47.5996H302.927H304C309.495 47.5996 314.172 42.5822 310.492 38.5697Z"/>
+                    </mask>
+                    <path d="M310.492 38.5697L308.826 36.7055L306.938 38.393L308.65 40.2595L310.492 38.5697ZM292.508 38.5697L294.35 40.2595L296.062 38.393L294.174 36.7055L292.508 38.5697ZM312.5 28.5C312.5 31.7607 311.084 34.6876 308.826 36.7055L312.158 40.4338C315.433 37.5074 317.5 33.2435 317.5 28.5H312.5ZM301.5 17.5C307.575 17.5 312.5 22.4249 312.5 28.5H317.5C317.5 19.6634 310.337 12.5 301.5 12.5V17.5ZM290.5 28.5C290.5 22.4249 295.425 17.5 301.5 17.5V12.5C292.663 12.5 285.5 19.6634 285.5 28.5H290.5ZM294.174 36.7055C291.916 34.6876 290.5 31.7607 290.5 28.5H285.5C285.5 33.2435 287.567 37.5074 290.842 40.4338L294.174 36.7055ZM290.666 36.8798C289.371 38.2911 288.686 39.9503 288.697 41.6899C288.708 43.3931 289.385 44.9232 290.356 46.1453C292.265 48.5452 295.553 50.0996 299 50.0996V45.0996C296.952 45.0996 295.154 44.1453 294.27 43.0334C293.846 42.4996 293.699 42.023 293.697 41.6569C293.695 41.3272 293.805 40.8545 294.35 40.2595L290.666 36.8798ZM299 50.0996H302.927V45.0996H299V50.0996ZM302.927 50.0996H304V45.0996H302.927V50.0996ZM304 50.0996C307.447 50.0996 310.735 48.5452 312.644 46.1453C313.615 44.9232 314.292 43.3931 314.303 41.6899C314.314 39.9503 313.629 38.2911 312.334 36.8798L308.65 40.2595C309.195 40.8545 309.305 41.3272 309.303 41.6569C309.301 42.023 309.154 42.4996 308.73 43.0334C307.846 44.1453 306.048 45.0996 304 45.0996V50.0996Z" fill="#D9D9D9" mask="url(#path-17-inside-1_3255_7425)"/>
+                    <circle cx="298" cy="27.5" r="1.5" fill="#D9D9D9"/>
+                    <circle cx="304.898" cy="27.5" r="1.5" fill="#D9D9D9"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- 题目列表页 -->
+        <div id="listPage" class="page hidden">
+            <div class="list-page">
+                <!-- 统一的顶部状态栏 -->
+                <svg class="status-bar" width="375" height="44" viewBox="0 0 375 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M304 20H305C305.552 20 306 20.4477 306 21V27C306 27.5523 305.552 28 305 28H304C303.448 28 303 27.5523 303 27V21C303 20.4477 303.448 20 304 20Z" fill="#333333"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M299.5 22H300.5C301.052 22 301.5 22.4477 301.5 23V27C301.5 27.5523 301.052 28 300.5 28H299.5C298.948 28 298.5 27.5523 298.5 27V23C298.5 22.4477 298.948 22 299.5 22Z" fill="#333333"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M295 23.5H296C296.552 23.5 297 23.9477 297 24.5V27C297 27.5523 296.552 28 296 28H295C294.448 28 294 27.5523 294 27V24.5C294 23.9477 294.448 23.5 295 23.5Z" fill="#333333"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M308.5 18H309.5C310.052 18 310.5 18.4477 310.5 19V27C310.5 27.5523 310.052 28 309.5 28H308.5C307.948 28 307.5 27.5523 307.5 27V19C307.5 18.4477 307.948 18 308.5 18Z" fill="#333333" fill-opacity="0.2"/>
+                <path d="M324.132 24.9395C324.771 24.9395 325.393 25.1075 325.94 25.4279L326.162 25.5577C326.33 25.6562 326.36 25.8865 326.222 26.024L324.328 27.9129C324.212 28.0289 324.023 28.0289 323.907 27.9129L322.025 26.0362C321.887 25.8993 321.916 25.6701 322.083 25.5709L322.302 25.4405C322.855 25.112 323.484 24.9395 324.132 24.9395Z" fill="#333333"/>
+                <path d="M324.133 21.4707C325.724 21.4707 327.251 21.9984 328.495 22.9758L328.671 23.1139C328.811 23.224 328.824 23.4315 328.697 23.5573L327.567 24.685C327.462 24.7893 327.297 24.8013 327.178 24.7131L327.04 24.6107C326.2 23.9861 325.186 23.6511 324.133 23.6511C323.073 23.6511 322.053 23.9903 321.21 24.622L321.072 24.7254C320.953 24.8142 320.787 24.8025 320.682 24.6979L319.552 23.5707C319.426 23.4451 319.438 23.2382 319.578 23.1279L319.753 22.9896C321 22.0036 322.534 21.4707 324.133 21.4707Z" fill="#333333"/>
+                <path d="M324.133 18C326.657 18 329.072 18.8906 330.983 20.5229L331.146 20.6623C331.278 20.7749 331.285 20.9756 331.163 21.098L330.036 22.2219C329.926 22.3308 329.752 22.3385 329.634 22.2395L329.494 22.1228C327.989 20.8647 326.104 20.1804 324.133 20.1804C322.155 20.1804 320.263 20.8694 318.756 22.1354L318.617 22.2527C318.498 22.3521 318.324 22.3447 318.214 22.2356L317.087 21.1118C316.965 20.9895 316.972 20.7892 317.104 20.6765L317.266 20.5371C319.18 18.8959 321.601 18 324.133 18Z" fill="#333333"/>
+                <path d="M360 21V21C360.552 21 361 21.4477 361 22V24C361 24.5523 360.552 25 360 25V25V21Z" fill="#333333" fill-opacity="0.6"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M339 17H356C357.657 17 359 18.3431 359 20V26C359 27.6569 357.657 29 356 29H339C337.343 29 336 27.6569 336 26V20C336 18.3431 337.343 17 339 17ZM339 18C337.895 18 337 18.8954 337 20V26C337 27.1046 337.895 28 339 28H356C357.105 28 358 27.1046 358 26V20C358 18.8954 357.105 18 356 18H339Z" fill="#333333" fill-opacity="0.6"/>
+                <rect x="338" y="19" width="19" height="8" rx="1" fill="#333333"/>
+                <path d="M37.8672 28.0889C40.5552 28.0889 42.1519 25.9868 42.1519 22.4272C42.1519 21.0869 41.8955 19.959 41.4048 19.0874C40.6943 17.7324 39.4712 17 37.9258 17C35.626 17 34 18.5454 34 20.7134C34 22.7495 35.4648 24.229 37.479 24.229C38.7168 24.229 39.7202 23.6504 40.2183 22.647H40.2402C40.2402 22.647 40.2695 22.647 40.2769 22.647C40.2915 22.647 40.3428 22.647 40.3428 22.647C40.3428 25.064 39.4272 26.5068 37.8818 26.5068C36.9736 26.5068 36.2705 26.0088 36.0288 25.2104H34.1465C34.4614 26.9463 35.9336 28.0889 37.8672 28.0889ZM37.9331 22.7275C36.7173 22.7275 35.853 21.8633 35.853 20.6548C35.853 19.4756 36.7612 18.5747 37.9404 18.5747C39.1196 18.5747 40.0278 19.4902 40.0278 20.6841C40.0278 21.8633 39.1416 22.7275 37.9331 22.7275Z" fill="#333333"/>
+                <path d="M45.243 27.9863C45.9388 27.9863 46.4148 27.4883 46.4148 26.8291C46.4148 26.1626 45.9388 25.6719 45.243 25.6719C44.5545 25.6719 44.0711 26.1626 44.0711 26.8291C44.0711 27.4883 44.5545 27.9863 45.243 27.9863ZM45.243 22.4932C45.9388 22.4932 46.4148 22.0024 46.4148 21.3433C46.4148 20.6768 45.9388 20.186 45.243 20.186C44.5545 20.186 44.0711 20.6768 44.0711 21.3433C44.0711 22.0024 44.5545 22.4932 45.243 22.4932Z" fill="#333333"/>
+                <path d="M53.2706 27.8325H55.0797V25.8623H56.5079V24.2656H55.0797V17.2637H52.4137C50.546 20.0762 49.0592 22.4272 48.107 24.1777V25.8623H53.2706V27.8325ZM49.8575 24.1997C51.088 22.0317 52.1866 20.2959 53.1974 18.8018H53.2999V24.3096H49.8575V24.1997Z" fill="#333333"/>
+                <path d="M60.5365 27.8325H62.4262V17.2637H60.5438L57.7826 19.1973V21.0137L60.412 19.168H60.5365V27.8325Z" fill="#333333"/>
+                
+                <!-- 添加底部导航栏 -->
+                <svg class="bottom-nav" width="375" height="88" viewBox="0 0 375 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 0H375V88H0V0Z" fill="white"/>
+                    <path d="M57 21.0195C57 18.2581 59.2386 16.0195 62 16.0195H74C80.6274 16.0195 86 21.3921 86 28.0195V42.2503C86 45.0117 83.7614 47.2503 81 47.2503H69C62.3726 47.2503 57 41.8777 57 35.2503V21.0195Z" fill="#51AE67"/>
+                    <rect x="63.4062" y="25.1836" width="13.7982" height="2.46397" rx="1.23198" fill="white"/>
+                    <rect x="63.4062" y="31.5918" width="9.85586" height="2.46397" rx="1.23198" fill="white"/>
+                    <path d="M183.113 4.4368C187.215 5.06235 187.081 13.3359 186.501 17.3945C186.501 17.3945 187.449 9.01669 185.86 9.01669C180.64 10.3565 179.01 3.81126 183.113 4.4368Z" fill="white" stroke="#D9D9D9" stroke-width="1.5"/>
+                    <path d="M192.556 8.12721C194.635 7.19958 194.089 3.97601 191.075 4.4399C188.061 4.90371 187.013 7.7407 186.839 9.05483C186.753 14.1954 186.839 18.0988 186.839 17.2875C186.839 10.0947 188.918 9.75055 192.556 8.12721Z" fill="white" stroke="#D9D9D9" stroke-width="1.5"/>
+                    <circle cx="185.301" cy="35.7949" r="20.5" fill="white"/>
+                    <ellipse cx="195.801" cy="39.7949" rx="18" ry="11.5" fill="white"/>
+                    <ellipse cx="192.301" cy="44.2031" rx="13.5" ry="12" fill="white"/>
+                    <path d="M181.801 32.7829C191.296 32.2499 191.803 45.6205 183.678 49.2031M204.323 30.2174C213.818 29.6844 215.872 44.2271 207.746 47.8097" stroke="#D9D9D9" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M169.379 49.3027C166.987 45.7846 164.801 41.4822 164.801 36.8361C164.801 24.9435 174.019 15.3027 185.389 15.3027C194.081 15.3027 200.781 20.9363 203.801 28.9027" stroke="#D9D9D9" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="191.301" cy="31.9883" r="1" fill="#D9D9D9"/>
+                    <path d="M201.764 46.1624C200.791 47.5492 194.257 46.2933 191.112 45.4919C188.922 44.6022 189.862 42.1875 191.089 42.0408C194.184 41.6712 197.339 41.8002 199.825 42.0666C201.884 42.2871 202.955 44.4677 201.764 46.1624Z" fill="white" stroke="#D9D9D9" stroke-width="1.5"/>
+                    <circle cx="199.5" cy="30.1953" r="1" fill="#D9D9D9"/>
+                    <path d="M204.1 34.8947C202.986 32.296 196.044 34.3775 191.987 36.0227C191.393 36.2635 190.797 36.5489 190.395 37.0482C188.676 39.1833 189.754 43.1422 191.1 43.3945C193.946 43.9282 196.832 43.8883 199.379 43.5915C203.575 43.1025 205.764 38.7777 204.1 34.8947Z" fill="white" stroke="#D9D9D9" stroke-width="1.5"/>
+                    <rect x="121" y="74" width="134" height="5" rx="2.5" fill="black"/>
+                    <mask id="path-17-inside-1_3255_7425" fill="white">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M310.492 38.5697C313.259 36.0975 315 32.5021 315 28.5C315 21.0442 308.956 15 301.5 15C294.044 15 288 21.0442 288 28.5C288 32.5021 289.741 36.0975 292.508 38.5697C288.828 42.5822 293.505 47.5996 299 47.5996H302.927H304C309.495 47.5996 314.172 42.5822 310.492 38.5697Z"/>
+                    </mask>
+                    <path d="M310.492 38.5697L308.826 36.7055L306.938 38.393L308.65 40.2595L310.492 38.5697ZM292.508 38.5697L294.35 40.2595L296.062 38.393L294.174 36.7055L292.508 38.5697ZM312.5 28.5C312.5 31.7607 311.084 34.6876 308.826 36.7055L312.158 40.4338C315.433 37.5074 317.5 33.2435 317.5 28.5H312.5ZM301.5 17.5C307.575 17.5 312.5 22.4249 312.5 28.5H317.5C317.5 19.6634 310.337 12.5 301.5 12.5V17.5ZM290.5 28.5C290.5 22.4249 295.425 17.5 301.5 17.5V12.5C292.663 12.5 285.5 19.6634 285.5 28.5H290.5ZM294.174 36.7055C291.916 34.6876 290.5 31.7607 290.5 28.5H285.5C285.5 33.2435 287.567 37.5074 290.842 40.4338L294.174 36.7055ZM290.666 36.8798C289.371 38.2911 288.686 39.9503 288.697 41.6899C288.708 43.3931 289.385 44.9232 290.356 46.1453C292.265 48.5452 295.553 50.0996 299 50.0996V45.0996C296.952 45.0996 295.154 44.1453 294.27 43.0334C293.846 42.4996 293.699 42.023 293.697 41.6569C293.695 41.3272 293.805 40.8545 294.35 40.2595L290.666 36.8798ZM299 50.0996H302.927V45.0996H299V50.0996ZM302.927 50.0996H304V45.0996H302.927V50.0996ZM304 50.0996C307.447 50.0996 310.735 48.5452 312.644 46.1453C313.615 44.9232 314.292 43.3931 314.303 41.6899C314.314 39.9503 313.629 38.2911 312.334 36.8798L308.65 40.2595C309.195 40.8545 309.305 41.3272 309.303 41.6569C309.301 42.023 309.154 42.4996 308.73 43.0334C307.846 44.1453 306.048 45.0996 304 45.0996V50.0996Z" fill="#D9D9D9" mask="url(#path-17-inside-1_3255_7425)"/>
+                    <circle cx="298" cy="27.5" r="1.5" fill="#D9D9D9"/>
+                    <circle cx="304.898" cy="27.5" r="1.5" fill="#D9D9D9"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script>
+        // 页面元素
+        const planPage = document.getElementById('planPage');
+        const videoPage = document.getElementById('videoPage');
+        const listPage = document.getElementById('listPage');
+        
+        // 按钮元素
+        const videoCardBtn = document.querySelector('.btn-video-card');
+        const problemCardBtn = document.querySelector('.btn-problem-card');
+        const backLaterBtn = document.querySelector('.btn-back-later');
+        
+        // 创建点击动画效果
+        function createClickEffect(x, y) {
+            const clickEffect = document.createElement('div');
+            clickEffect.className = 'click-animation';
+            clickEffect.style.left = x + 'px';
+            clickEffect.style.top = y + 'px';
+            document.body.appendChild(clickEffect);
+            
+            // 动画结束后移除元素
+            setTimeout(() => {
+                clickEffect.remove();
+            }, 600);
+        }
+        
+        // 创建高亮效果
+        function createHighlight(elem) {
+            const rect = elem.getBoundingClientRect();
+            const container = document.querySelector('.container');
+            const containerRect = container.getBoundingClientRect();
+            
+            const highlight = document.createElement('div');
+            highlight.className = 'highlight-card';
+            highlight.style.left = (rect.left - containerRect.left) + 'px';
+            highlight.style.top = (rect.top - containerRect.top) + 'px';
+            highlight.style.width = rect.width + 'px';
+            highlight.style.height = rect.height + 'px';
+            container.appendChild(highlight);
+            
+            return highlight;
+        }
+        
+        // 切换页面函数
+        function switchPage(from, to) {
+            from.classList.remove('active');
+            from.classList.add('hidden');
+            to.classList.remove('hidden');
+            to.classList.add('active');
+        }
+        
+        // 自动演示
+        function startDemo() {
+            // 第一步：高亮视频卡片并点击
+            const videoCardHighlight = createHighlight(videoCardBtn);
+            
+            setTimeout(() => {
+                // 模拟点击视频卡片
+                const rect = videoCardBtn.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                createClickEffect(centerX, centerY);
+                
+                // 移除高亮
+                videoCardHighlight.remove();
+                
+                // 切换到视频页
+                setTimeout(() => {
+                    switchPage(planPage, videoPage);
+                    
+                    // 第二步：停留3秒后高亮并点击"等会再看"按钮
+                    setTimeout(() => {
+                        const backBtnHighlight = createHighlight(backLaterBtn);
+                        
+                        setTimeout(() => {
+                            // 模拟点击"等会再看"按钮
+                            const btnRect = backLaterBtn.getBoundingClientRect();
+                            const btnCenterX = btnRect.left + btnRect.width / 2;
+                            const btnCenterY = btnRect.top + btnRect.height / 2;
+                            createClickEffect(btnCenterX, btnCenterY);
+                            
+                            // 移除高亮
+                            backBtnHighlight.remove();
+                            
+                            // 切换回计划页
+                            setTimeout(() => {
+                                switchPage(videoPage, planPage);
+                                
+                                // 第三步：高亮并点击精选题卡片
+                                setTimeout(() => {
+                                    const problemCardHighlight = createHighlight(problemCardBtn);
+                                    
+                                    setTimeout(() => {
+                                        // 模拟点击精选题卡片
+                                        const problemRect = problemCardBtn.getBoundingClientRect();
+                                        const problemCenterX = problemRect.left + problemRect.width / 2;
+                                        const problemCenterY = problemRect.top + problemRect.height / 2;
+                                        createClickEffect(problemCenterX, problemCenterY);
+                                        
+                                        // 移除高亮
+                                        problemCardHighlight.remove();
+                                        
+                                        // 切换到题目列表页
+                                        setTimeout(() => {
+                                            switchPage(planPage, listPage);
+                                            
+                                            // 演示结束 - 5秒后重新开始
+                                            setTimeout(() => {
+                                                switchPage(listPage, planPage);
+                                                startDemo();
+                                            }, 5000);
+                                        }, 500);
+                                    }, 1000);
+                                }, 1000);
+                            }, 500);
+                        }, 1000);
+                    }, 3000); // 在视频页停留3秒
+                }, 500);
+            }, 1000);
+        }
+        
+        // 当页面加载完成后开始演示
+        window.addEventListener('load', function() {
+            setTimeout(startDemo, 1500);
+        });
+    </script>
+</body>
+</html>

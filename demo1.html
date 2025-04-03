@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>伴学鸭聊天记录</title>
+    <style>
+        /* 全局样式 */
+        body {
+            font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(to bottom right, #CCFF88, #F1FFD7);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        
+        .phone-container {
+            width: 375px;
+            height: 812px;
+            background: linear-gradient(150deg, #ccff88 0%, #f1ffd7 100%);
+            border-radius: 33px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 88px; /* 为底部功能区留出空间 */
+            padding: 60px 15px 15px; /* 顶部padding增加到60px，给状态栏留足空间 */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            -webkit-overflow-scrolling: touch;
+            mask-image: linear-gradient(to bottom, transparent 0, transparent 44px, black 60px); /* 创建顶部透明遮罩 */
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0, transparent 44px, black 60px);
+        }
+
+        /* 顶部状态栏 */
+        .status-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            z-index: 10; /* 提高z-index确保始终在最上层 */
+            background-color: rgba(204, 255, 136, 0.9); /* 半透明背景 */
+            backdrop-filter: blur(5px); /* 添加模糊效果 */
+            -webkit-backdrop-filter: blur(5px);
+        }
+        
+        .status-bar-time {
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .status-bar-icons {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-bar-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .status-bar-icon svg {
+            width: auto;
+            height: auto;
+        }
+
+        /* 底部功能区 - 更新样式 */
+        .bottom-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 88px;
+            background: white;  /* 纯白色背景，与设计图一致 */
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 9;
+            padding-bottom: 14px;  /* 添加底部间距，为小横条留出空间 */
+        }
+
+        .bottom-bar-icon {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .bottom-bar-icon:hover {
+            background-color: rgba(204, 255, 136, 0.3);
+        }
+
+        /* 修改鸭子图标样式，使其与设计图一致 */
+        .duck-icon {
+            width: 58px;
+            height: 58px;
+            background-color: #51AE67;  /* 绿色背景，与设计图一致 */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(81, 174, 103, 0.3);
+            margin-bottom: 5px;  /* 调整底部间距 */
+        }
+
+        /* 添加底部小横条 */
+        .bottom-bar-indicator {
+            position: absolute;
+            bottom: 9px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 134px;
+            height: 5px;
+            background-color: black;
+            border-radius: 2.5px;
+        }
+
+        /* 消息样式 */
+        .message {
+            max-width: 80%;
+            margin-bottom: 18px;
+            position: relative;
+            animation: fadeIn 0.3s ease forwards;
+            padding: 14px 20px;
+            border-radius: 18px;
+            font-size: 16px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .duck-message {
+            align-self: flex-start;
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #333;
+            border-radius: 18px 18px 18px 0;
+            margin-left: 0;
+            border: 1px solid rgba(195, 225, 149, 0.5);
+            box-shadow: 0 2px 8px rgba(195, 225, 149, 0.25);
+        }
+
+        .duck-message::before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: -10px;
+            width: 20px;
+            height: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-bottom-right-radius: 20px;
+            z-index: -1;
+        }
+
+        .duck-message::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: -10px;
+            width: 20px;
+            height: 20px;
+            background-color: rgba(255, 255, 255, 0);
+            border-bottom-right-radius: 20px;
+            box-shadow: 5px 0 0 0 rgba(255, 255, 255, 0.8);
+            z-index: -2;
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background-color: rgba(255, 255, 255, 0.4);
+            color: #585858;
+            border-radius: 20px;
+            margin-right: 0;
+            box-shadow: 0 2px 8px rgba(81, 174, 103, 0.25);
+        }
+
+        .user-message::before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            background-color: rgba(81, 174, 103, 0.9);
+            border-bottom-left-radius: 20px;
+            z-index: -1;
+        }
+
+        .user-message::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            background-color: rgba(81, 174, 103, 0);
+            border-bottom-left-radius: 20px;
+            box-shadow: -5px 0 0 0 rgba(81, 174, 103, 0.9);
+            z-index: -2;
+        }
+
+        .duck-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #FFDB70;
+            border-radius: 50%;
+            position: absolute;
+            left: -50px;
+            top: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            box-shadow: 0 2px 8px rgba(255, 219, 112, 0.3);
+        }
+
+        /* 灵动岛样式 - 保持原样 */
+        .dynamic-island {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(1, 1, 1, 0.8);
+            border-radius: 37px;
+            z-index: 100;
+            transition: all 0.5s cubic-bezier(0.33, 1, 0.68, 1); /* 使用更平滑的缓动函数 */
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 0;
+            width: 134px;
+            min-height: 36px;
+            backdrop-filter: blur(10.7px);
+            -webkit-backdrop-filter: blur(10.7px);
+            will-change: width, height, min-height; /* 提示浏览器预先做好准备 */
+        }
+        
+        .dynamic-island.expanded-step1 {
+            width: 347px;
+            height: 68px;
+        }
+        
+        .dynamic-island.expanded-step2 {
+            width: 347px;
+            height: 182px;
+        }
+        
+        .dynamic-island.expanded-step3 {
+            width: 347px;
+            min-height: 282px;
+            height: auto;
+            max-height: 500px;
+        }
+
+        .eye-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            animation: lookAround 8s ease-in-out infinite;
+            transition: opacity 0.5s ease;
+            opacity: 1;
+            padding-top: 8px;
+            width: 100%;
+        }
+
+        .eye-container.fade-out {
+            opacity: 0;
+        }
+
+        .eye-container.hidden {
+            display: none;
+        }
+        
+        .eye {
+            width: 18px;
+            height: 22px;
+            background-color: #6ef089;
+            border-radius: 50% / 40%;
+            transition: height 0.2s ease;
+        }
+        
+        .eye.blink {
+            animation: blinkAnim 0.3s ease-in-out forwards;
+        }
+
+        @keyframes blinkAnim {
+            0% { height: 22px; }
+            50% { height: 4px; }
+            100% { height: 22px; }
+        }
+
+        @keyframes lookAround {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(8px); }
+            40% { transform: translateX(-8px); }
+            60% { transform: translateX(0); }
+            100% { transform: translateX(0); }
+        }
+
+        .thinking-text {
+            position: absolute;
+            left: 24px;
+            top: 26px;
+            font-family: 'PingFang SC', sans-serif;
+            font-size: 16px;
+            line-height: 18px;
+            letter-spacing: 0.08em;
+            color: #94FAA1;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            white-space: nowrap;
+        }
+
+        .thinking-text.visible {
+            opacity: 1;
+        }
+        
+        .think-icon {
+            position: absolute;
+            left: 24px;
+            top: 62px;
+            width: 12px;
+            height: 9px;
+            z-index: 12;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .think-icon.visible {
+            opacity: 1;
+        }
+
+        .analysis-text {
+            position: absolute;
+            left: 42px;
+            right: 29px;
+            top: 56px;
+            font-family: 'PingFang SC', sans-serif;
+            font-size: 14px;
+            font-weight: normal;
+            line-height: 20px;
+            letter-spacing: 0.1em;
+            color: #94FAA1;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            text-align: justify;
+            text-justify: inter-word;
+            max-width: 276px;
+        }
+
+        .analysis-text.visible {
+            opacity: 0.8;
+        }
+
+        .find-icon {
+            position: absolute;
+            left: 24px;
+            width: 12px;
+            height: 12px;
+            z-index: 12;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .find-icon.visible {
+            opacity: 1;
+        }
+
+        .extra-text {
+            position: absolute;
+            font-family: 'PingFang SC', sans-serif;
+            font-size: 12px;
+            font-weight: normal;
+            line-height: 20px;
+            color: rgba(111, 255, 243, 0.7);
+            background-color: rgba(148, 250, 161, 0.2);
+            padding: 4px 14px;
+            white-space: normal;
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            max-width: 260px;
+            right: 29px;
+        }
+
+        .extra-text.visible {
+            opacity: 1;
+        }
+
+        /* 选项样式 */
+        .options-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+            animation: fadeIn 0.3s ease forwards;
+        }
+        
+        .option-button {
+            width: 90%;
+            padding: 15px 0;
+            margin-bottom: 10px;
+            border-radius: 18px;
+            font-size: 16px;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.4);
+            color: #333;
+            box-shadow: 0 2px 10px rgba(195, 225, 149, 0.3);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .option-button:hover, .option-button.selected {
+            background-color: #51AE67;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(81, 174, 103, 0.3);
+        }
+        
+        /* 表单样式 */
+        .form-container {
+            width: 90%;
+            margin: 15px auto;
+            background-color: rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 25px rgba(195, 225, 149, 0.2);
+            animation: fadeIn 0.3s ease forwards;
+        }
+        
+        .form-title {
+            color: #469337;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        
+        .form-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        
+        .form-option {
+            flex: 1 0 30%;
+            background-color: #E6FEC5;
+            color: #333;
+            padding: 12px 0;
+            margin: 5px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(70, 147, 55, 0.1);
+        }
+        
+        .form-option:hover, .form-option.selected {
+            background-color: #51AE67;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(81, 174, 103, 0.2);
+        }
+        
+        .form-submit {
+            background-color: #51AE67;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 15px 0;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(81, 174, 103, 0.2);
+            transition: all 0.3s ease;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .form-submit:hover {
+            background-color: #469337;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(81, 174, 103, 0.3);
+        }
+        
+        /* 图表和卡片样式 */
+        .card-container {
+            width: 90%;
+            margin: 15px auto;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(195, 225, 149, 0.25);
+            animation: fadeIn 0.3s ease forwards;
+        }
+        
+        .card-title {
+            color: #469337;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .chart-container {
+            height: 300px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        
+        .statistics-bar {
+            height: 30px;
+            background-color: #51AE67;
+            border-radius: 6px;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(81, 174, 103, 0.2);
+        }
+        
+        .video-list, .exercise-list {
+            margin-top: 15px;
+        }
+        
+        .video-item, .exercise-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-radius: 15px;
+            background-color: white;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .video-item:hover, .exercise-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .video-icon, .exercise-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 15px;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .video-icon {
+            background-color: #DC74E9;
+            box-shadow: 0 2px 8px rgba(220, 116, 233, 0.3);
+        }
+        
+        .exercise-icon {
+            background-color: #2A95E7;
+            box-shadow: 0 2px 8px rgba(42, 149, 231, 0.3);
+        }
+        
+        .video-info, .exercise-info {
+            flex: 1;
+        }
+        
+        .video-title, .exercise-title {
+            font-weight: 500;
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .video-duration, .exercise-duration {
+            font-size: 14px;
+            color: #868686;
+        }
+        
+        .check-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: rgba(84, 202, 21, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #54CA15;
+            font-size: 16px;
+        }
+
+        /* 计划卡片样式 */
+        .plan-card {
+            margin-top: 15px;
+        }
+        
+        .plan-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-radius: 15px;
+            background-color: white;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .plan-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .plan-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 15px;
+            font-size: 22px;
+            background-color: #E6FEC5;
+            color: #51AE67;
+        }
+        
+        .plan-info {
+            flex: 1;
+        }
+        
+        .plan-title {
+            font-weight: 500;
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .plan-duration {
+            font-size: 14px;
+            color: #868686;
+        }
+        
+        .plan-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .plan-button {
+            width: 48%;
+            padding: 14px 0;
+            border-radius: 14px;
+            font-size: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .plan-button-adjust {
+            background-color: white;
+            color: #585858;
+            border: 1px solid #EAEAEA;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .plan-button-adjust:hover {
+            background-color: #f8f8f8;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .plan-button-add {
+            background-color: #51AE67;
+            color: white;
+            border: none;
+            box-shadow: 0 2px 10px rgba(81, 174, 103, 0.2);
+        }
+
+        .plan-button-add:hover {
+            background-color: #469337;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(81, 174, 103, 0.3);
+        }
+        
+        .success-dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            z-index: 1000;
+            width: 250px;
+        }
+        
+        .success-message {
+            font-weight: 500;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .success-button {
+            background-color: #51AE67;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 12px 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            box-shadow: 0 4px 10px rgba(81, 174, 103, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .success-button:hover {
+            background-color: #469337;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(81, 174, 103, 0.3);
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 移除所有消息气泡尾部 */
+        .user-message::before, 
+        .user-message::after,
+        .duck-message::before,
+        .duck-message::after {
+            display: none !important;
+        }
+
+        /* 移除用户消息气泡尾部 */
+        .user-message::before, 
+        .user-message::after {
+            display: none !important;
+        }
+
+        /* 添加一个顶部遮罩，确保内容不会显示在状态栏下方 */
+        .phone-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 44px;
+            background: linear-gradient(150deg, #ccff88 0%, #f1ffd7 100%);
+            z-index: 9;
+            pointer-events: none; /* 允许点击穿透 */
+        }
+
+        .form-option.hover-effect {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(81, 174, 103, 0.2);
+            background-color: rgba(81, 174, 103, 0.2);
+        }
+        
+        .form-submit.clicked {
+            transform: translateY(2px);
+            box-shadow: 0 2px 5px rgba(81, 174, 103, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <!-- 灵动岛 - 保持原有实现 -->
+        <div class="dynamic-island" id="dynamic-island">
+            <div class="eye-container" id="eye-container">
+                <div class="eye" id="left-eye"></div>
+                <div class="eye" id="right-eye"></div>
+            </div>
+            <div class="thinking-text" id="thinking-text">思考中</div>
+            <img src="think icon.png" alt="思考" id="think-icon" class="think-icon">
+            <div class="analysis-text" id="analysis-text"></div>
+            <img src="find.png" alt="搜索" id="find-icon" class="find-icon">
+            <div class="extra-text" id="extra-line1"></div>
+            <div class="extra-text" id="extra-line2"></div>
+            </div>
+
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <div class="status-bar-time">10:41</div>
+            <div class="status-bar-icons">
+                <!-- 信号强度图标 -->
+                <div class="status-bar-icon">
+                    <svg width="16" height="10" viewBox="0 0 16 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M304 20H305C305.552 20 306 20.4477 306 21V27C306 27.5523 305.552 28 305 28H304C303.448 28 303 27.5523 303 27V21C303 20.4477 303.448 20 304 20Z" transform="translate(-294 -18)" fill="#333333"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M299.5 22H300.5C301.052 22 301.5 22.4477 301.5 23V27C301.5 27.5523 301.052 28 300.5 28H299.5C298.948 28 298.5 27.5523 298.5 27V23C298.5 22.4477 298.948 22 299.5 22Z" transform="translate(-294 -18)" fill="#333333"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M295 23.5H296C296.552 23.5 297 23.9477 297 24.5V27C297 27.5523 296.552 28 296 28H295C294.448 28 294 27.5523 294 27V24.5C294 23.9477 294.448 23.5 295 23.5Z" transform="translate(-294 -18)" fill="#333333"/>
+                    </svg>
+        </div>
+        
+                <!-- WiFi图标 -->
+                <div class="status-bar-icon">
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M324.132 24.9395C324.771 24.9395 325.393 25.1075 325.94 25.4279L326.162 25.5577C326.33 25.6562 326.36 25.8865 326.222 26.024L324.328 27.9129C324.212 28.0289 324.023 28.0289 323.907 27.9129L322.025 26.0362C321.887 25.8993 321.916 25.6701 322.083 25.5709L322.302 25.4405C322.855 25.112 323.484 24.9395 324.132 24.9395Z" transform="translate(-316 -18)" fill="#333333"/>
+                        <path d="M324.133 21.4707C325.724 21.4707 327.251 21.9984 328.495 22.9758L328.671 23.1139C328.811 23.224 328.824 23.4315 328.697 23.5573L327.567 24.685C327.462 24.7893 327.297 24.8013 327.178 24.7131L327.04 24.6107C326.2 23.9861 325.186 23.6511 324.133 23.6511C323.073 23.6511 322.053 23.9903 321.21 24.622L321.072 24.7254C320.953 24.8142 320.787 24.8025 320.682 24.6979L319.552 23.5707C319.426 23.4451 319.438 23.2382 319.578 23.1279L319.753 22.9896C321 22.0036 322.534 21.4707 324.133 21.4707Z" transform="translate(-316 -18)" fill="#333333"/>
+                        <path d="M324.133 18C326.657 18 329.072 18.8906 330.983 20.5229L331.146 20.6623C331.278 20.7749 331.285 20.9756 331.163 21.098L330.036 22.2219C329.926 22.3308 329.752 22.3385 329.634 22.2395L329.494 22.1228C327.989 20.8647 326.104 20.1804 324.133 20.1804C322.155 20.1804 320.263 20.8694 318.756 22.1354L318.617 22.2527C318.498 22.3521 318.324 22.3447 318.214 22.2356L317.087 21.1118C316.965 20.9895 316.972 20.7892 317.104 20.6765L317.266 20.5371C319.18 18.8959 321.601 18 324.133 18Z" transform="translate(-316 -18)" fill="#333333"/>
+                    </svg>
+        </div>
+        
+                <!-- 电池图标 -->
+                <div class="status-bar-icon">
+                    <svg width="25" height="12" viewBox="0 0 25 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M360 21V21C360.552 21 361 21.4477 361 22V24C361 24.5523 360.552 25 360 25V25V21Z" transform="translate(-336 -17)" fill="#333333" fill-opacity="0.6"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M339 17H356C357.657 17 359 18.3431 359 20V26C359 27.6569 357.657 29 356 29H339C337.343 29 336 27.6569 336 26V20C336 18.3431 337.343 17 339 17ZM339 18C337.895 18 337 18.8954 337 20V26C337 27.1046 337.895 28 339 28H356C357.105 28 358 27.1046 358 26V20C358 18.8954 357.105 18 356 18H339Z" transform="translate(-336 -17)" fill="#333333" fill-opacity="0.6"/>
+                        <rect x="2" y="2" width="19" height="8" rx="1" fill="#333333"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 聊天容器 -->
+        <div class="chat-container" id="chat-messages-container"></div>
+
+        <!-- 底部功能区 -->
+        <div class="bottom-bar">
+            <div class="bottom-bar-icon">
+                <img src="task01.png" alt="计划" style="width: 26px; height: 26px;">
+        </div>
+            <div class="duck-icon">
+                <img src="duck.png" alt="鸭子" style="width: 40px; height: 40px;">
+            </div>
+            <div class="bottom-bar-icon">
+                <img src="my.png" alt="我的" style="width: 26px; height: 26px;">
+            </div>
+            <!-- 添加底部小横条 -->
+            <div class="bottom-bar-indicator"></div>
+        </div>
+    </div>
+    
+    <script>
+        // 对话内容数组
+        const conversation = [
+            {
+                type: 'ai',
+                content: '嗨同学！我是伴学鸭~你叫我鸭鸭就好！你现在上高几呀？',
+                options: ['高一', '高二', '高三']
+            },
+            {
+                type: 'thinking',
+                analysis: '学生选择"高三"后，需快速共情——高三压力大，时间紧迫，要传递"我理解你的难处"的信号。询问省份是为了定位考纲差异（如湖北新高考、全国卷等），不同省份考点权重、命题风格差异较大。',
+                searching: '调取《省份考纲差异库》'
+            },
+            {
+                type: 'ai',
+                content: '高三党不容易呀，还有几十天就高考了呢，你在哪个省奋斗呢？'
+            },
+            {
+                type: 'user',
+                content: '湖北'
+            },
+            {
+                type: 'thinking',
+                analysis: '通过"湖北小伙伴"强化地域共鸣，暗示"我对你的情况很了解"。开放式提问"感觉咋样"既能引导倾诉，又能观察学生情绪状态。若学生抱怨，需优先情绪安抚；若沉默，则需进一步引导。',
+                searching: '检索《湖北近3年模考难度系数表》，确认是否近期模考难度确实高于往年（用于后续客观分析）。'
+            },
+            {
+                type: 'ai',
+                content: '哎呀，鸭鸭的湖北小伙伴们都说最近的模考难度爆表呢，你感觉咋样？'
+            },
+            {
+                type: 'user',
+                content: '模考已崩，物理才50，我想上一本，啊啊啊啊啊.....'
+            },
+            {
+                type: 'thinking',
+                analysis: '学生表现出焦虑情绪，需先稳定情绪再给方案。"物理50"是核心信息，要快速判断：50分在湖北物理卷中的位置（通常满分100，50分处于中下水平），结合一本线推算需提升的分数区间。用"不慌"快速镇定学生情绪，"分析局势"体现专业性。追问其他科目是为判断提分优先级——如果其他科已接近天花板，则需全力冲刺物理；若其他科也有空间，则需统筹规划。',
+                searching: '调用《湖北近3年一本线分数换算表》'
+            },
+            {
+                type: 'ai',
+                content: '不慌，容鸭鸭帮你分析下局势，你其他科都怎么样啊，考一本你物理需要提升到多少？'
+            },
+            {
+                type: 'user',
+                content: '其他科倒还好，物理怎么也得冲到80分，现在完全没有思路怎么学。'
+            },
+            {
+                type: 'thinking',
+                analysis: '学生提到"物理冲到80分"的目标时，表现出明显的焦虑和自我怀疑。作为老师，我需要快速传递希望，用具体数据替代空洞安慰。\n策略：\n- 锚定效应：用"30-40分"的明确提升幅度，让学生对标可实现的路径；\n- 社会认同：强调"往期同学"的成功案例，降低孤独感；\n- 目标拆解：暗示"2个月"的短期冲刺可行性，避免学生被"80天"的长期压力击垮。\n潜在风险：若学生追问成功率，需后续补充数据细节，但当前优先稳定情绪。',
+                searching: '调用《短期提分案例库》'
+            },
+            {
+                type: 'ai',
+                content: '好，明白了，别急哈，咱们往期有很多同学在2个月内提升过30-40分呢。'
+            },
+            {
+                type: 'thinking',
+                analysis: '学生当前分数隐含两个信息：基础题已掌握（50分≈及格线），但中高频考点存在漏洞。需明确传递"你有潜力，只需精准补漏"的结论：\n诊断逻辑：\n- 肯定基础：50分≠零基础，避免学生陷入"我什么都差"的消极归因；\n- 问题定位：强调"薄弱板块"而非"全部重学"，减少认知负荷；\n- 行动导向：为后续推送表单埋下伏笔（"针对薄弱"需先明确薄弱点）。\n潜台词：学生可能因焦虑陷入盲目刷题，需引导其转向结构化学习。',
+                searching: '调取《物理题型分层模型》，分析50分段学生典型失分模块'
+            },
+            {
+                type: 'ai',
+                content: '你现在50分说明有一定基础，接下来就得针对薄弱板块进行提升了呢。'
+            },
+            {
+                type: 'thinking',
+                analysis: '在铺垫希望和逻辑后，需引导学生主动参与诊断，避免"填表"显得突兀：\n设计逻辑：\n- 降低门槛：用"说说"软化表单的正式感，减少抗拒心理；\n- 选项引导：表单需预设高频失分模块（如电磁学、力学综合题），避免学生因回忆模糊放弃填写；\n- 数据驱动：为后续个性化计划提供依据，同时让学生感知到"专业分析"的价值。\n风险预判：若学生填写模糊（如"都差"），需准备追问话术（如"哪部分上课听最懵？"）。',
+                searching: '调用《物理知识点分类表单模板》'
+            },
+            {
+                type: 'ai',
+                content: '你可以和我说说你哪部分丢分最多吗？可以填下这个表。',
+                form: {
+                    title: '物理错题分布调查',
+                    modules: [
+                        {title: '力学模块', options: ['一般不会错', '偶尔错', '经常错'], selected: 1},
+                        {title: '电磁学模块', options: ['一般不会错', '偶尔错', '经常错'], selected: 2},
+                        {title: '选修模块', options: ['一般不会错', '偶尔错', '经常错'], selected: 1},
+                        {title: '实验模块', options: ['一般不会错', '偶尔错', '经常错'], selected: 1},
+                        {title: '计算模块', options: ['一般不会错', '偶尔错', '经常错'], selected: 1}
+                    ]
+                }
+            },
+            {
+                type: 'thinking',
+                analysis: '根据表单数据（力学正确率60%、电学30%），判断学生知识结构断层点。力学是物理基础，电学更依赖抽象思维，需针对性补足电磁学模块。同时暗示"力学有救，电学可突破"，增强学生信心。',
+                searching: '匹配《电磁学高频考点清单》，筛选湖北近5年出现2次以上的考点（如电磁感应、复合场）'
+            },
+            {
+                type: 'ai',
+                content: '明白了，看来你力学学得不错，电学基础稍微差点儿。'
+            },
+            {
+                type: 'thinking',
+                analysis: '用数据说话，避免空洞鼓励。强调"一年两考"让学生意识到这些专题的性价比，同时传递"冲刺这些题能快速提分"的战术。需同步思考如何将高频考点与学生薄弱点结合。',
+                searching: '调取《湖北物理专题考频图谱》，标注电磁学高频题型和对应解题模板。'
+            },
+            {
+                type: 'ai',
+                content: '我们看下近四年湖北的考题哈，电磁学模块电场、磁场、电磁感应均出现过⼀年两考，这几个专题是你接下来要重点要攻克的对象。',
+                chart: {
+                    title: '2021-2024 一级模块均分降序表',
+                    data: [
+                        {name: '电磁感应', value: 6, width: '90%'},
+                        {name: '动量', value: 6, width: '90%'},
+                        {name: '能量', value: 6, width: '90%'},
+                        {name: '输电场', value: 5, width: '80%'},
+                        {name: '牛顿运动定律', value: 5, width: '80%'},
+                        {name: '磁场', value: 4, width: '70%'},
+                        {name: '电学实验', value: 4, width: '70%'},
+                        {name: '热学', value: 4, width: '70%'},
+                        {name: '万有引力与物理', value: 3, width: '60%'},
+                        {name: '原子物理', value: 3, width: '60%'},
+                        {name: '振动与波', value: 3, width: '60%'},
+                        {name: '力学实验', value: 2, width: '50%'},
+                        {name: '曲线运动', value: 2, width: '50%'},
+                        {name: '选修实验', value: 2, width: '50%'},
+                        {name: '光学', value: 1, width: '40%'},
+                        {name: '相互作用', value: 1, width: '40%'},
+                        {name: '圆周运动', value: 1, width: '40%'}
+                    ]
+                }
+            },
+            {
+                type: 'user',
+                content: '好的，那我应该怎么学呢，现在上课我已经听不懂了。'
+            },
+            {
+                type: 'thinking',
+                analysis: '制定"先补基础再模拟"的进阶路径。选择黄夫人课程因其通俗易懂、适合基础薄弱学生；错题记录是提分关键，需强调过程管理。同时考虑学生时间有限，资源必须精准匹配。',
+                searching: '从《合作课程资源库》提取B站黄夫人电磁学播放量TOP5视频，关联错题本功能调用记录。'
+            },
+            {
+                type: 'ai',
+                content: '嗯，前期的话你可以先练这份电学专题精选，搭配B站主播黄夫人的视频课，把所有的考点和题型熟悉一遍，在这个过程中要注重解题质量，每道错题都要记录错误的原因。',
+                videos: [
+                    {title: '电场基本概念与规律', duration: '28分钟'},
+                    {title: '学霸笔记【电场力与电势能】', duration: '32分钟'},
+                    {title: '磁场与安培力', duration: '30分钟'},
+                    {title: '楞次定律详解', duration: '35分钟'}
+                ]
+            },
+            {
+                type: 'ai',
+                content: '后期再练这份模拟题+真题汇编，掐时间来做，按照高考节奏来模拟练。',
+                exercises: [
+                    {title: '电场强度和电势专项', count: '10题'},
+                    {title: '磁场与安培力练习', count: '12题'},
+                    {title: '电磁感应综合题', count: '15题'},
+                    {title: '电学实验专题', count: '8题'}
+                ]
+            },
+            {
+                type: 'user',
+                content: '好的，这些需要练多久呀，我还有80天就高考了。'
+            },
+            {
+                type: 'ai',
+                content: '你每天能花多少时间跟着我练呀。'
+            },
+            {
+                type: 'user',
+                content: '大概1-2小时吧。'
+            },
+            {
+                type: 'thinking',
+                analysis: '将80天拆分为"基础攻坚+模拟冲刺"符合学习规律。每天1.5小时符合学生时间承诺，避免因强度过高导致放弃。添加计划按钮是行为设计，通过承诺机制提升执行率。',
+                searching: '调用《冲刺阶段时间规划模型》，按7:3分配基础与冲刺练习，嵌入艾宾浩斯遗忘曲线安排错题回顾。'
+            },
+            {
+                type: 'ai',
+                content: '好那我给你定个80天的训练计划吧，前40天是模块训练，后40天是模拟练习，每天一个半小时，你看下可以不，如果你可以你就点添加计划，咱们从明天开始就可以训练了。'
+            },
+            {
+                type: 'plan',
+                title: '40天电磁专题训练',
+                subtitle: '4月10日 - 5月20日 40 天完成',
+                items: [
+                    {
+                        icon: '<span style="font-size:26px; color:#DC74E9;">▶</span>', 
+                        title: '[B站]黄夫人电场合集【20节】', 
+                        duration: '每天1节 · 预计30分钟',
+                        type: 'video'
+                    },
+                    {
+                        icon: '<span style="font-size:24px; color:#F37B30;">📚</span>', 
+                        title: '学霸解题技巧笔记【40页】', 
+                        duration: '每天1页 · 预计10分钟',
+                        type: 'notes'
+                    },
+                    {
+                        icon: '<span style="font-size:24px; color:#2A95E7;">📝</span>', 
+                        title: '电磁专项练习精选【100题】', 
+                        duration: '每天3道 · 预计20分钟',
+                        type: 'exercise'
+                    }
+                ]
+            }
+        ];
+
+        // 创建消息元素的函数
+        function createElement(className, innerHTML = '') {
+            const element = document.createElement('div');
+            element.className = className;
+            element.innerHTML = innerHTML;
+            return element;
+        }
+
+        // 显示AI消息 - 修复意外的"else"错误
+        async function showAiMessage(message) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const container = document.getElementById('chat-messages-container');
+                    const messageElement = createElement('message duck-message');
+                    
+                    // 添加消息内容
+                    messageElement.textContent = message.content;
+                    container.appendChild(messageElement);
+                    
+                    // 如果有选项，延迟显示选项卡
+                    if (message.options) {
+                        setTimeout(() => {
+                        const optionsContainer = createElement('options-container');
+                            optionsContainer.id = 'options-container';
+                            
+                        message.options.forEach((option, index) => {
+                            const optionButton = createElement('option-button', option);
+                            optionsContainer.appendChild(optionButton);
+                        });
+                            
+                        container.appendChild(optionsContainer);
+                            container.scrollTop = container.scrollHeight;
+                            
+                            // 延迟自动选中"高三"选项
+                            setTimeout(() => {
+                                const highSchoolOption = Array.from(optionsContainer.querySelectorAll('.option-button'))
+                                    .find(button => button.textContent.trim() === '高三');
+                                
+                                if (highSchoolOption) {
+                                    // 添加选中样式
+                                    highSchoolOption.classList.add('selected');
+                                    
+                                    // 增加一个短暂延迟，让用户可以看到选中状态
+                                    setTimeout(() => {
+                                        // 然后再移除选项并显示用户消息
+                                    optionsContainer.remove();
+                                    
+                                    // 显示用户选择的消息
+                                    showUserMessage('高三').then(() => {
+                                        // 完成这条消息的处理
+                                        resolve();
+                                    });
+                                    }, 800); // 给予800毫秒的时间显示选中状态
+                                } else {
+                                    resolve(); // 如果找不到"高三"选项，直接完成
+                                }
+                            }, 1500); // 显示选项后1.5秒自动选中
+                        }, 1500); // 显示AI消息后1.5秒显示选项
+                    } else {
+                        // 如果没有选项，处理其他内容类型
+                        if (message.form) {
+                            // 如果有表单，显示表单
+                            const formContainer = createElement('form-container');
+                            const formTitle = createElement('form-title', message.form.title);
+                            formContainer.appendChild(formTitle);
+                            
+                            message.form.modules.forEach(module => {
+                                const formGroup = createElement('form-group');
+                                const groupTitle = createElement('form-group-title', module.title);
+                                formGroup.appendChild(groupTitle);
+                                
+                                const formOptions = createElement('form-options');
+                                module.options.forEach((option, index) => {
+                                    const formOption = createElement('form-option', option);
+                                        // 初始不选中任何选项
+                                    formOptions.appendChild(formOption);
+                                });
+                                
+                                formGroup.appendChild(formOptions);
+                                formContainer.appendChild(formGroup);
+                            });
+                            
+                            const formSubmit = createElement('form-submit', '提交');
+                                formSubmit.style.opacity = '0.5';  // 初始提交按钮设为半透明
+                                formSubmit.style.pointerEvents = 'none';  // 禁用点击
+                            formContainer.appendChild(formSubmit);
+                            container.appendChild(formContainer);
+                                
+                                // 添加指示器提示正在自动填写
+                                const autoFillIndicator = createElement('div', '请填写...');
+                                autoFillIndicator.style.cssText = `
+                                    align-self: flex-start;
+                                    font-size: 12px;
+                                    color: #888;
+                                    margin: 5px 15px;
+                                    opacity: 0.7;
+                                `;
+                                container.appendChild(autoFillIndicator);
+                                container.scrollTop = container.scrollHeight;
+                                
+                                // 自动选择表单选项和提交
+                                setTimeout(() => {
+                                    autoSelectFormOptions(formContainer, message.form, () => {
+                                        // 移除指示器
+                                        autoFillIndicator.remove();
+                                        
+                                        // 启用并高亮提交按钮
+                                        formSubmit.style.opacity = '1';
+                                        formSubmit.style.pointerEvents = 'auto';
+                                        
+                                        // 添加提交指示器
+                                        const submitIndicator = createElement('div', '正在提交...');
+                                        submitIndicator.style.cssText = `
+                                            align-self: flex-start;
+                                            font-size: 12px;
+                                            color: #888;
+                                            margin: 5px 15px;
+                                            opacity: 0.7;
+                                        `;
+                                        container.appendChild(submitIndicator);
+                                        container.scrollTop = container.scrollHeight;
+                                        
+                                        // 自动点击提交按钮
+                                        setTimeout(() => {
+                                            formSubmit.classList.add('clicked');
+                                            setTimeout(() => {
+                                                // 修改按钮文本为"已提交"
+                                                formSubmit.innerHTML = '已提交';
+                                                // 添加样式使按钮置灰
+                                                formSubmit.style.backgroundColor = '#a9a9a9';
+                                                formSubmit.style.pointerEvents = 'none';
+                                                formSubmit.style.cursor = 'default';
+                                                formSubmit.style.boxShadow = 'none';
+                                                
+                                                formSubmit.classList.remove('clicked');
+                                                submitIndicator.remove();
+                                                resolve();
+                                            }, 500);
+                                        }, 1000);
+                                    });
+                                }, 1500);
+                            } 
+                            // 添加处理视频列表的代码
+                            else if (message.videos) {
+                                const videoList = createElement('video-list');
+                                
+                                message.videos.forEach(video => {
+                                    const videoItem = createElement('video-item');
+                                    
+                                    const videoIcon = createElement('video-icon', '▶');
+                                    
+                                    const videoInfo = createElement('video-info');
+                                    const videoTitle = createElement('video-title', video.title);
+                                    const videoDuration = createElement('video-duration', video.duration);
+                                    
+                                    videoInfo.appendChild(videoTitle);
+                                    videoInfo.appendChild(videoDuration);
+                                    
+                                    videoItem.appendChild(videoIcon);
+                                    videoItem.appendChild(videoInfo);
+                                    
+                                    videoList.appendChild(videoItem);
+                                });
+                                
+                                container.appendChild(videoList);
+                                container.scrollTop = container.scrollHeight;
+                                resolve();
+                            }
+                            // 添加处理练习题列表的代码
+                            else if (message.exercises) {
+                                const exerciseList = createElement('exercise-list');
+                                
+                                message.exercises.forEach(exercise => {
+                                    const exerciseItem = createElement('exercise-item');
+                                    
+                                    const exerciseIcon = createElement('exercise-icon', '📝');
+                                    
+                                    const exerciseInfo = createElement('exercise-info');
+                                    const exerciseTitle = createElement('exercise-title', exercise.title);
+                                    const exerciseDuration = createElement('exercise-duration', exercise.count);
+                                    
+                                    exerciseInfo.appendChild(exerciseTitle);
+                                    exerciseInfo.appendChild(exerciseDuration);
+                                    
+                                    exerciseItem.appendChild(exerciseIcon);
+                                    exerciseItem.appendChild(exerciseInfo);
+                                    
+                                    exerciseList.appendChild(exerciseItem);
+                                });
+                                
+                                container.appendChild(exerciseList);
+                                container.scrollTop = container.scrollHeight;
+                                resolve();
+                            }
+                            // 在处理其他内容类型的部分添加对chart的处理
+                            else if (message.chart) {
+                    const cardContainer = createElement('card-container');
+                                const cardTitle = createElement('card-title', message.chart.title);
+                    cardContainer.appendChild(cardTitle);
+                    
+                                const chartContainer = createElement('chart-container');
+                                
+                                message.chart.data.forEach(item => {
+                                    const statisticsBar = createElement('statistics-bar', item.name);
+                                    statisticsBar.style.width = item.width;
+                                    chartContainer.appendChild(statisticsBar);
+                                });
+                                
+                                cardContainer.appendChild(chartContainer);
+                    container.appendChild(cardContainer);
+                                container.scrollTop = container.scrollHeight;
+                                resolve();
+                            }
+                            // 其他情况
+                            else {
+                                container.scrollTop = container.scrollHeight;
+                                resolve();
+                            }
+                        }
+                    }, 300);
+                });
+            }
+
+        // 添加自动选择表单选项的函数
+        function autoSelectFormOptions(formContainer, formData, callback) {
+            const formGroups = formContainer.querySelectorAll('.form-group');
+            
+            // 依次选择每个模块的选项
+            function selectNextGroup(index) {
+                if (index >= formGroups.length) {
+                    // 所有模块选择完成
+                    if (callback) callback();
+                    return;
+                }
+                
+                const group = formGroups[index];
+                const options = group.querySelectorAll('.form-option');
+                const selectedIndex = formData.modules[index].selected;
+                
+                // 添加鼠标悬停效果
+                setTimeout(() => {
+                    options[selectedIndex].classList.add('hover-effect');
+                    
+                    // 添加点击效果
+                    setTimeout(() => {
+                        options[selectedIndex].classList.remove('hover-effect');
+                        options[selectedIndex].classList.add('selected');
+                        
+                        // 播放点击声音（可选）
+                        // playClickSound();
+                        
+                        // 继续下一个组
+                        selectNextGroup(index + 1);
+                    }, 400);
+                }, 800);
+            }
+            
+            // 开始选择第一个组
+            selectNextGroup(0);
+        }
+
+        // 显示用户消息
+        async function showUserMessage(content) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const container = document.getElementById('chat-messages-container');
+                    const messageElement = createElement('message user-message', content);
+                    container.appendChild(messageElement);
+                    container.scrollTop = container.scrollHeight;
+                    resolve();
+                }, 1000);
+            });
+        }
+
+        // 灵动岛眨眼动画
+        function startBlinking() {
+            const leftEye = document.getElementById('left-eye');
+            const rightEye = document.getElementById('right-eye');
+            
+            setInterval(() => {
+                leftEye.classList.add('blink');
+                rightEye.classList.add('blink');
+                
+                setTimeout(() => {
+                    leftEye.classList.remove('blink');
+                    rightEye.classList.remove('blink');
+                }, 300);
+            }, 4000);
+        }
+
+        // 显示思考灵动岛
+        async function showThinking(message) {
+            return new Promise(resolve => {
+                const dynamicIsland = document.getElementById('dynamic-island');
+                const eyeContainer = document.getElementById('eye-container');
+                const thinkingText = document.getElementById('thinking-text');
+                const thinkIcon = document.getElementById('think-icon');
+                const analysisText = document.getElementById('analysis-text');
+                const findIcon = document.getElementById('find-icon');
+                const extraLine1 = document.getElementById('extra-line1');
+                const extraLine2 = document.getElementById('extra-line2');
+                
+                // 初始化灵动岛状态
+                eyeContainer.classList.remove('fade-out', 'hidden');
+                thinkingText.classList.remove('visible');
+                thinkIcon.classList.remove('visible');
+                analysisText.classList.remove('visible');
+                findIcon.classList.remove('visible');
+                extraLine1.classList.remove('visible');
+                extraLine2.classList.remove('visible');
+                
+                // 重置文本内容
+                analysisText.textContent = '';
+                extraLine1.textContent = '';
+                extraLine2.textContent = '';
+                
+                // 重置thinking-text，清除旧的计时器
+                thinkingText.textContent = '思考中';
+                const existingTimer = document.getElementById('timer-span');
+                if (existingTimer) {
+                    existingTimer.remove();
+                }
+                
+                // 确保动态岛处于初始状态
+                dynamicIsland.className = 'dynamic-island';
+                dynamicIsland.style.minHeight = '';
+                
+                // 预先估算文本高度 - 在任何动画开始前
+                const isLongText = message.analysis.length > 150;
+                
+                // 使用requestAnimationFrame确保样式变化在合适的时机执行
+                requestAnimationFrame(() => {
+                // 步骤1：灵动岛眼睛逐渐消失
+                    eyeContainer.classList.add('fade-out');
+                    
+                    setTimeout(() => {
+                        eyeContainer.classList.add('hidden');
+                        
+                        // 准备计时器元素
+                            const timerSpan = document.createElement('span');
+                            timerSpan.style.marginLeft = '6px';
+                            timerSpan.id = 'timer-span';
+                            thinkingText.appendChild(timerSpan);
+                            
+                        // 在后台精确计算分析文本的高度
+                        const tempDiv = document.createElement('div');
+                        tempDiv.style.cssText = `
+                            position: absolute; 
+                            visibility: hidden; 
+                            width: 276px;
+                            font-size: 14px;
+                            line-height: 20px;
+                            letter-spacing: 0.1em;
+                            font-family: 'PingFang SC', sans-serif;
+                        `;
+                        tempDiv.textContent = message.analysis;
+                        document.body.appendChild(tempDiv);
+                        
+                        const analysisHeight = tempDiv.clientHeight;
+                        document.body.removeChild(tempDiv);
+                        
+                        // 计算所有内容的总高度
+                        const searchLines = message.searching.split('\n');
+                        let totalHeight = 56 + analysisHeight + 40; // top位置 + 分析高度 + 边距
+                        
+                        if (searchLines.length > 0) {
+                            totalHeight += 28; // 第一行搜索内容
+                        }
+                        
+                        if (searchLines.length > 1) {
+                            totalHeight += 38; // 第二行搜索内容
+                        }
+                        
+                        totalHeight = Math.max(totalHeight, 282); // 确保至少达到基本高度
+                        
+                        // 一次性切换到expanded-step1
+                        requestAnimationFrame(() => {
+                            dynamicIsland.classList.add('expanded-step1');
+                            
+                            setTimeout(() => {
+                                // 显示thinking-text和计时器
+                                thinkingText.classList.add('visible');
+                                
+                                // 启动计时器
+                                let seconds = 1;
+                            const timerInterval = setInterval(() => {
+                                const min = Math.floor(seconds / 60);
+                                const sec = seconds % 60;
+                                timerSpan.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+                                seconds++;
+                            }, 1000);
+                                
+                            setTimeout(() => {
+                                    // 一次性切换到expanded-step2，对于长文本直接使用预计算的更大尺寸
+                                    requestAnimationFrame(() => {
+                                dynamicIsland.classList.remove('expanded-step1');
+                                        
+                                        // 特殊处理长文本：直接使用足够大的高度
+                                        if (isLongText) {
+                                            // 设置一个足够大的高度，超过分析文本所需的高度
+                                            dynamicIsland.style.minHeight = `${Math.max(totalHeight, 350)}px`;
+                                            dynamicIsland.classList.add('expanded-step3');
+                                        } else {
+                                dynamicIsland.classList.add('expanded-step2');
+                                        }
+                                
+                                setTimeout(() => {
+                                            // 显示思考图标
+                                    thinkIcon.classList.add('visible');
+                                    
+                                    setTimeout(() => {
+                                                // 显示分析文本 - 此时容器已经足够大
+                                                typeText(analysisText, message.analysis, () => {
+                                                    // 分析文本完成后
+                                        setTimeout(() => {
+                                                        if (!isLongText) {
+                                                            // 只有在非长文本时才需要这个过渡
+                                                            requestAnimationFrame(() => {
+                                                                dynamicIsland.style.minHeight = `${totalHeight}px`;
+                                            dynamicIsland.classList.remove('expanded-step2');
+                                            dynamicIsland.classList.add('expanded-step3');
+                                                            });
+                                                        }
+                                                        
+                                                        // 设置搜索图标和内容的位置
+                                                        const currentAnalysisBottom = 56 + analysisHeight;
+                                                        findIcon.style.top = (currentAnalysisBottom + 20) + 'px';
+                                                        extraLine1.style.left = '45px';
+                                                        extraLine1.style.right = '29px';
+                                                        extraLine1.style.top = (currentAnalysisBottom + 15) + 'px';
+                                                        
+                                                        if (searchLines.length > 1) {
+                                                            extraLine2.style.left = '45px';
+                                                            extraLine2.style.right = '29px';
+                                                            extraLine2.style.top = (currentAnalysisBottom + 15 + 28 + 10) + 'px';
+                                                        }
+                                                        
+                                            setTimeout(() => {
+                                                            // 显示搜索图标和内容
+                                                findIcon.classList.add('visible');
+                                                
+                                                if (searchLines.length > 0) {
+                                                    extraLine1.classList.add('visible');
+                                                    typeText(extraLine1, searchLines[0]);
+                                                }
+                                                
+                                                if (searchLines.length > 1) {
+                                                    setTimeout(() => {
+                                                        extraLine2.classList.add('visible');
+                                                        typeText(extraLine2, searchLines[1]);
+                                                                }, 400);
+                                                }
+                                                
+                                                            // 3秒后收回灵动岛
+                                                setTimeout(() => {
+                                                    clearInterval(timerInterval);
+                                                    
+                                                                // 一次性隐藏所有内容
+                                                                thinkingText.classList.remove('visible');
+                                                                thinkIcon.classList.remove('visible');
+                                                                analysisText.classList.remove('visible');
+                                                    findIcon.classList.remove('visible');
+                                                    extraLine1.classList.remove('visible');
+                                                    extraLine2.classList.remove('visible');
+                                                    
+                                                                // 在下一帧恢复初始状态
+                                                                requestAnimationFrame(() => {
+                                                                    dynamicIsland.style.minHeight = '';
+                                                            dynamicIsland.className = 'dynamic-island';
+                                                            
+                                                                    setTimeout(() => {
+                                                            eyeContainer.classList.remove('hidden');
+                                                            eyeContainer.classList.remove('fade-out');
+                                                            resolve();
+                                                                    }, 600);
+                                                                });
+                                                            }, 2000);
+                                                        }, 400);
+                                                    }, 800);
+                                                });
+                                            }, 400);
+                                        }, 400);
+                                    });
+                                }, 400);
+                            }, 400);
+                        }, 400);
+                    }, 400);
+                });
+            });
+        }
+
+        // 文本打字机效果
+        function typeText(element, text, callback) {
+            element.classList.add('visible');
+            element.textContent = '';
+            
+            let index = 0;
+            
+            function typeChar() {
+                if (index < text.length) {
+                    element.textContent += text[index];
+                    index++;
+                    setTimeout(typeChar, 15); // 从30ms减少到15ms，加快打字速度
+                } else if (callback) {
+                    callback(); // 文本完全显示后执行回调
+                }
+            }
+            
+            typeChar();
+        }
+
+        // 显示计划卡片
+        async function showPlanCard(message) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const container = document.getElementById('chat-messages-container');
+                    const cardContainer = createElement('card-container');
+                    const cardTitle = createElement('card-title', message.title);
+                    cardContainer.appendChild(cardTitle);
+                    
+                    const planCard = createElement('plan-card');
+                    message.items.forEach(item => {
+                        const planItem = createElement('plan-item');
+                        const planIcon = createElement('plan-icon', item.icon);
+                        const planInfo = createElement('plan-info');
+                        
+                        const planTitle = createElement('plan-title', item.title);
+                        const planDuration = createElement('plan-duration', item.duration);
+                        
+                        planInfo.appendChild(planTitle);
+                        planInfo.appendChild(planDuration);
+                        
+                        planItem.appendChild(planIcon);
+                        planItem.appendChild(planInfo);
+                        
+                        planCard.appendChild(planItem);
+                    });
+                    
+                    // 添加按钮
+                    const planButtons = createElement('plan-buttons');
+                    const adjustButton = createElement('plan-button plan-button-adjust', '需要调整');
+                    const addButton = createElement('plan-button plan-button-add', '添加计划');
+                    
+                    // 添加点击事件
+                    addButton.addEventListener('click', () => {
+                        showSuccessDialog();
+                    });
+                    
+                    planButtons.appendChild(adjustButton);
+                    planButtons.appendChild(addButton);
+                    
+                    planCard.appendChild(planButtons);
+                    cardContainer.appendChild(planCard);
+                    container.appendChild(cardContainer);
+                    
+                    container.scrollTop = container.scrollHeight;
+                    resolve();
+                }, 500);
+            });
+        }
+        
+        // 显示成功弹窗
+        function showSuccessDialog() {
+            const successDialog = document.createElement('div');
+            successDialog.className = 'success-dialog';
+            successDialog.style.display = 'block';
+            
+            const successMessage = createElement('success-message', '已添加任务');
+            const successButton = createElement('success-button', '开始学习');
+            
+            successDialog.appendChild(successMessage);
+            successDialog.appendChild(successButton);
+            
+            document.body.appendChild(successDialog);
+            
+            // 修改按钮点击事件，添加开始学习的环节
+            successButton.addEventListener('click', () => {
+                successDialog.style.display = 'none';
+                
+                // 关闭对话框后显示开始学习的内容
+                setTimeout(() => {
+                    document.body.removeChild(successDialog);
+                    
+                    // 显示学习开始的消息
+                    showStartLearningMessages();
+                }, 300);
+            });
+            
+            // 移除自动关闭的逻辑，让用户必须点击按钮
+            // setTimeout(() => {
+            //     successDialog.style.display = 'none';
+            //     setTimeout(() => {
+            //         document.body.removeChild(successDialog);
+            //     }, 300);
+            // }, 2000);
+        }
+
+        // 添加显示学习开始消息的函数
+        async function showStartLearningMessages() {
+            const container = document.getElementById('chat-messages-container');
+            
+            // 显示鸭鸭正在输入的状态
+            const typingIndicator = createElement('div', '鸭鸭正在输入...');
+            typingIndicator.style.cssText = `
+                align-self: flex-start;
+                font-size: 12px;
+                color: #888;
+                margin: 5px 15px;
+                opacity: 0.7;
+            `;
+            container.appendChild(typingIndicator);
+            container.scrollTop = container.scrollHeight;
+            
+            // 模拟输入延迟
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // 移除输入状态，显示消息
+            typingIndicator.remove();
+            
+            // 显示第一条消息
+            const messageElement1 = createElement('message duck-message');
+            messageElement1.textContent = '好的！我们的学习计划已经开始啦！🎉 从今天开始，我会每天按时提醒你学习进度。';
+            container.appendChild(messageElement1);
+            container.scrollTop = container.scrollHeight;
+            
+            // 显示第二条消息前的延迟
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // 显示第二条消息前的输入状态
+            const typingIndicator2 = createElement('div', '鸭鸭正在输入...');
+            typingIndicator2.style.cssText = `
+                align-self: flex-start;
+                font-size: 12px;
+                color: #888;
+                margin: 5px 15px;
+                opacity: 0.7;
+            `;
+            container.appendChild(typingIndicator2);
+            container.scrollTop = container.scrollHeight;
+            
+            // 模拟输入延迟
+            await new Promise(resolve => setTimeout(resolve, 1800));
+            
+            // 移除输入状态，显示消息
+            typingIndicator2.remove();
+            
+            // 显示第二条消息
+            const messageElement2 = createElement('message duck-message');
+            messageElement2.textContent = '今天的任务已经准备好了：《电场基本概念与规律》视频课，《静电场的描述》笔记精读，以及3道基础练习题。加油哦！💪';
+            container.appendChild(messageElement2);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 渲染整个对话
+        async function renderConversation() {
+            startBlinking(); // 开始眨眼动画
+            
+            for (let i = 0; i < conversation.length; i++) {
+                const message = conversation[i];
+                
+                if (message.type === 'thinking') {
+                    await showThinking(message);
+                } else if (message.type === 'ai') {
+                    await showAiMessage(message);
+                    
+                    // 跳过第一条用户消息（已由选项自动生成）
+                    if (i === 0 && i + 1 < conversation.length && conversation[i + 1].type === 'user') {
+                        i++; // 跳过下一条预定义的用户消息
+                    } 
+                    // 检查下一条消息是否也是AI发送的，如果是，添加延迟
+                    else if (i + 1 < conversation.length && conversation[i + 1].type === 'ai') {
+                        // 特殊处理视频列表和提问之间的消息
+                        let aiThinkingDelay;
+                        
+                        // 如果当前消息包含视频列表且下一条是提问花多少时间，则使用更长的延迟
+                        if (message.videos && i + 1 < conversation.length && 
+                            conversation[i + 1].content.includes("你每天能花多少时间")) {
+                            aiThinkingDelay = 3000; // 固定使用3秒延迟
+                            console.log("使用较长的消息延迟");
+                        } else {
+                            // 其他情况使用正常的随机延迟
+                            aiThinkingDelay = Math.floor(Math.random() * 500) + 1500; // 从0.8-1.3秒增加到1.5-2秒
+                        }
+                        
+                        await new Promise(resolve => setTimeout(resolve, aiThinkingDelay));
+                        
+                        // 添加"鸭鸭正在输入..."的提示
+                        const container = document.getElementById('chat-messages-container');
+                        const typingIndicator = createElement('div', '鸭鸭正在输入...');
+                        typingIndicator.style.cssText = `
+                            align-self: flex-start;
+                            font-size: 12px;
+                            color: #888;
+                            margin: 5px 15px;
+                            opacity: 0.7;
+                        `;
+                        container.appendChild(typingIndicator);
+                        container.scrollTop = container.scrollHeight;
+                        
+                        // 视频列表后的消息使用更长的输入时间
+                        const typingTime = message.videos ? 
+                            Math.floor(Math.random() * 600) + 1200 : // 视频列表后使用1.2-1.8秒
+                            Math.floor(Math.random() * 400) + 600;   // 一般情况使用0.6-1秒
+                        
+                        await new Promise(resolve => setTimeout(resolve, typingTime));
+                        typingIndicator.remove();
+                    }
+                    
+                    // 添加额外延迟，模拟用户思考时间
+                    if (i + 1 < conversation.length && conversation[i + 1].type === 'user') {
+                        await new Promise(resolve => setTimeout(resolve, 1000)); // 用户思考的时间
+                    }
+                } else if (message.type === 'user') {
+                    // 模拟用户输入
+                    await simulateTyping();
+                    await showUserMessage(message.content);
+                } else if (message.type === 'plan') {
+                    await showPlanCard(message);
+                }
+            }
+            
+            // 对话全部显示完后，自动触发添加计划和开始学习的流程
+            setTimeout(() => {
+                // 查找并自动点击"添加计划"按钮
+                const addPlanButton = document.querySelector('.plan-button-add');
+                if (addPlanButton) {
+                    addPlanButton.click(); // 触发点击事件
+                    
+                    // 添加延迟后自动点击"开始学习"按钮
+                    setTimeout(() => {
+                        const startLearningButton = document.querySelector('.success-button');
+                        if (startLearningButton) {
+                            startLearningButton.click(); // 触发点击事件
+                        }
+                    }, 1500); // 1.5秒后点击"开始学习"按钮
+                }
+            }, 3000); // 等待3秒后开始自动流程，确保所有内容都已加载完成
+        }
+        
+        // 添加模拟输入状态的函数
+        async function simulateTyping() {
+            return new Promise(resolve => {
+                // 这里可以添加"正在输入"的指示器
+                // 简单实现：可以在消息容器下方添加一个临时的"正在输入..."提示
+                const container = document.getElementById('chat-messages-container');
+                const typingIndicator = createElement('div', '正在输入...');
+                typingIndicator.style.cssText = `
+                    align-self: flex-end;
+                    font-size: 12px;
+                    color: #888;
+                    margin: 5px 15px;
+                    opacity: 0.7;
+                `;
+                container.appendChild(typingIndicator);
+                container.scrollTop = container.scrollHeight;
+                
+                // 随机时间后移除"正在输入"指示器，模拟真实输入体验
+                const typingTime = Math.floor(Math.random() * 1000) + 500; // 从0.5-1.5秒减少到0.5-1.5秒
+                setTimeout(() => {
+                    typingIndicator.remove();
+                    resolve();
+                }, typingTime);
+            });
+        }
+        
+        // 表单选项点击效果
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('form-option')) {
+                const parent = event.target.parentElement;
+                parent.querySelectorAll('.form-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                event.target.classList.add('selected');
+            }
+            
+            if (event.target.classList.contains('option-button')) {
+                const parent = event.target.parentElement;
+                parent.querySelectorAll('.option-button').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                event.target.classList.add('selected');
+            }
+        });
+        
+        // 页面加载完成后开始渲染对话
+        window.addEventListener('load', renderConversation);
+    </script>
+</body>
+</html>
